@@ -1,164 +1,218 @@
 package com.health.service.impl;
 
 import com.health.entity.CheckupReport;
-import com.health.entity.CheckupAppointment;
+import com.health.mapper.CheckupReportMapper;
 import com.health.service.CheckupService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
-/**
- * 智能体检服务实现
- */
 @Service
 public class CheckupServiceImpl implements CheckupService {
 
+    @Autowired
+    private CheckupReportMapper checkupReportMapper;
+
     @Override
-    public List<Map<String, Object>> searchCenters(Map<String, Object> params) {
+    public List<Map<String, Object>> getPackages() {
+        List<Map<String, Object>> packages = new ArrayList<>();
+        packages.add(createPackage(1L, "基础体检套餐", 298, "基础检查项目"));
+        packages.add(createPackage(2L, "标准体检套餐", 598, "推荐套餐"));
+        packages.add(createPackage(3L, "深度体检套餐", 1280, "全面检查"));
+        return packages;
+    }
+
+    @Override
+    public Map<String, Object> getPackageDetail(Long id) {
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("id", id);
+        detail.put("name", id == 2 ? "标准体检套餐" : "基础体检套餐");
+        List<String> items = Arrays.asList("血常规", "尿常规", "肝功能", "肾功能", "血脂", "血糖", "心电图");
+        detail.put("items", items);
+        return detail;
+    }
+
+    @Override
+    public List<Map<String, Object>> getCenters(String city, String keyword) {
         List<Map<String, Object>> centers = new ArrayList<>();
-
-        Map<String, Object> center1 = new HashMap<>();
-        center1.put("id", 1);
-        center1.put("name", "美年大健康体检中心");
-        center1.put("address", "武汉市武昌区中南路1号");
-        center1.put("rating", 4.5);
-        center1.put("reviewCount", 1256);
-        center1.put("minPrice", 299);
-        center1.put("distance", 1.2);
-        center1.put("available", true);
-        center1.put("tags", Arrays.asList("三甲合作", "周末可约", "报告快速"));
-        centers.add(center1);
-
-        Map<String, Object> center2 = new HashMap<>();
-        center2.put("id", 2);
-        center2.put("name", "慈铭体检中心");
-        center2.put("address", "武汉市江汉区建设大道568号");
-        center2.put("rating", 4.3);
-        center2.put("reviewCount", 892);
-        center2.put("minPrice", 399);
-        center2.put("distance", 2.5);
-        center2.put("available", true);
-        center2.put("tags", Arrays.asList("环境优雅", "设备先进", "专家团队"));
-        centers.add(center2);
-
-        Map<String, Object> center3 = new HashMap<>();
-        center3.put("id", 3);
-        center3.put("name", "爱康国宾体检中心");
-        center3.put("address", "武汉市洪山区珞瑜路10号");
-        center3.put("rating", 4.6);
-        center3.put("reviewCount", 1580);
-        center3.put("minPrice", 349);
-        center3.put("distance", 3.8);
-        center3.put("available", false);
-        center3.put("tags", Arrays.asList("口碑好评", "套餐丰富", "免费早餐"));
-        centers.add(center3);
-
+        centers.add(createCenter(1L, "美年大健康(光谷店)", "武汉市洪山区光谷大道77号", 4.5, "2.3km", 15));
+        centers.add(createCenter(2L, "爱康国宾(武昌店)", "武汉市武昌区中南路99号", 4.3, "5.1km", 25));
+        centers.add(createCenter(3L, "瑞慈体检(汉口店)", "武汉市江汉区解放大道688号", 4.7, "8.5km", 45));
         return centers;
     }
 
     @Override
-    public CheckupAppointment createAppointment(Long userId, Map<String, Object> params) {
-        CheckupAppointment appointment = new CheckupAppointment();
-        appointment.setId(System.currentTimeMillis());
-        appointment.setUserId(userId);
-        appointment.setCenterId(Long.valueOf(params.get("centerId").toString()));
-        appointment.setAppointmentDate(params.get("date").toString());
-        appointment.setPackageType(params.get("package").toString());
-        appointment.setPhone(params.get("phone").toString());
-        appointment.setStatus("已预约");
-        appointment.setCreateTime(new Date());
-        return appointment;
+    public Map<String, Object> getCenterDetail(Long id) {
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("id", id);
+        detail.put("name", "美年大健康(光谷店)");
+        detail.put("address", "武汉市洪山区光谷大道77号");
+        detail.put("phone", "027-87654321");
+        return detail;
     }
 
     @Override
-    public List<CheckupAppointment> getAppointments(Long userId, Map<String, Object> params) {
-        return new ArrayList<>();
+    public List<Map<String, Object>> getTimeSlots(Long centerId, String date) {
+        List<Map<String, Object>> slots = new ArrayList<>();
+        slots.add(createTimeSlot("08:00-08:30", true, 5));
+        slots.add(createTimeSlot("08:30-09:00", true, 3));
+        slots.add(createTimeSlot("09:00-09:30", false, 0));
+        slots.add(createTimeSlot("09:30-10:00", true, 8));
+        return slots;
     }
 
     @Override
-    public void cancelAppointment(Long id) {
-        // TODO: 实现取消预约逻辑
-    }
-
-    @Override
-    public List<CheckupReport> getReports(Long userId, Map<String, Object> params) {
-        List<CheckupReport> reports = new ArrayList<>();
-
-        CheckupReport report1 = new CheckupReport();
-        report1.setId(1L);
-        report1.setUserId(userId);
-        report1.setReportDate("2024-01-15");
-        report1.setReportType("年度体检");
-        report1.setStatus("已解读");
-        report1.setScore(82);
-        report1.setAbnormalCount(3);
-        report1.setNormalCount(42);
-        reports.add(report1);
-
-        return reports;
-    }
-
-    @Override
-    public CheckupReport getReportDetail(Long id) {
-        CheckupReport report = new CheckupReport();
-        report.setId(id);
-        report.setReportDate("2024-01-15");
-        report.setReportType("年度体检");
-        report.setStatus("已解读");
-        report.setScore(82);
-        report.setAbnormalCount(3);
-        report.setNormalCount(42);
-        report.setReviewCount(1);
-        return report;
-    }
-
-    @Override
-    public Map<String, Object> analyzeImage(Long userId, Map<String, Object> params) {
+    public Map<String, Object> createAppointment(Map<String, Object> appointment) {
         Map<String, Object> result = new HashMap<>();
-        result.put("imageName", params.get("imageType") + "_analysis.jpg");
-        result.put("riskLevel", "低风险");
-        result.put("findings", Arrays.asList(
-            Map.of("location", "右肺上叶", "description", "肺野透亮度正常，未见明显异常密度影", "significance", "正常"),
-            Map.of("location", "心脏", "description", "心影大小形态正常", "significance", "正常", "measurement", "心胸比: 0.48")
-        ));
-        result.put("suggestion", Map.of(
-            "title", "检查结果正常",
-            "urgent", false,
-            "content", "您的检查未发现明显异常，建议保持良好的生活习惯，定期体检。"
-        ));
+        result.put("success", true);
+        result.put("appointmentId", System.currentTimeMillis());
+        result.put("message", "预约成功");
         return result;
     }
 
     @Override
-    public List<Map<String, Object>> getAnalysisHistory(Long userId, Map<String, Object> params) {
-        return new ArrayList<>();
+    public List<Map<String, Object>> getAppointments(Long userId, String status) {
+        List<Map<String, Object>> appointments = new ArrayList<>();
+        appointments.add(createAppointment(1L, "标准体检套餐", "美年大健康", "2025-01-20", "待体检"));
+        appointments.add(createAppointment(2L, "基础体检套餐", "爱康国宾", "2024-06-15", "已完成"));
+        return appointments;
     }
 
     @Override
-    public List<Map<String, Object>> getPackages(Map<String, Object> params) {
-        List<Map<String, Object>> packages = new ArrayList<>();
+    public Map<String, Object> getAppointmentDetail(Long id) {
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("id", id);
+        detail.put("package", "标准体检套餐");
+        detail.put("center", "美年大健康");
+        detail.put("date", "2025-01-20");
+        detail.put("time", "09:00-09:30");
+        return detail;
+    }
 
-        Map<String, Object> basic = new HashMap<>();
-        basic.put("id", "basic");
-        basic.put("name", "基础套餐");
-        basic.put("price", 299);
-        basic.put("items", Arrays.asList("血常规", "尿常规", "肝功能", "肾功能", "血糖", "血脂"));
-        packages.add(basic);
+    @Override
+    public Map<String, Object> cancelAppointment(Long id) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "预约已取消");
+        return result;
+    }
 
-        Map<String, Object> standard = new HashMap<>();
-        standard.put("id", "standard");
-        standard.put("name", "标准套餐");
-        standard.put("price", 599);
-        standard.put("items", Arrays.asList("血常规", "尿常规", "肝功能", "肾功能", "血糖", "血脂", "心电图", "B超", "胸透"));
-        packages.add(standard);
+    @Override
+    public List<CheckupReport> getReports(Long userId) {
+        return checkupReportMapper.selectByUserId(userId);
+    }
 
-        Map<String, Object> advanced = new HashMap<>();
-        advanced.put("id", "advanced");
-        advanced.put("name", "高级套餐");
-        advanced.put("price", 999);
-        advanced.put("items", Arrays.asList("血常规", "尿常规", "肝功能", "肾功能", "血糖", "血脂", "心电图", "B超", "胸透", "CT", "肿瘤标志物", "甲状腺功能"));
-        packages.add(advanced);
+    @Override
+    public CheckupReport getReportDetail(Long id) {
+        return checkupReportMapper.selectById(id);
+    }
 
-        return packages;
+    @Override
+    public Map<String, Object> analyzeReport(Long id) {
+        Map<String, Object> analysis = new HashMap<>();
+
+        List<Map<String, String>> sections = new ArrayList<>();
+        sections.add(createAnalysisSection("总体评价", "您的体检结果总体尚可，有几项指标需要引起重视。"));
+        sections.add(createAnalysisSection("血糖偏高", "空腹血糖6.8mmol/L超出正常范围，建议减少精制碳水摄入。"));
+        sections.add(createAnalysisSection("血脂异常", "总胆固醇和甘油三酯均偏高，建议调整饮食结构。"));
+
+        analysis.put("sections", sections);
+        return analysis;
+    }
+
+    @Override
+    public Map<String, Object> analyzeImage(MultipartFile file) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("taskId", UUID.randomUUID().toString());
+        result.put("status", "processing");
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> getAnalysisResult(String taskId) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("taskId", taskId);
+        result.put("status", "completed");
+
+        List<Map<String, Object>> findings = new ArrayList<>();
+        findings.add(createFinding("肺结节", "中", "右肺上叶见一磨玻璃结节，大小约6mm"));
+        findings.add(createFinding("肺纹理增多", "低", "双肺纹理增多、增粗"));
+
+        result.put("findings", findings);
+        result.put("diagnosis", "1. 右肺上叶磨玻璃结节，建议随访观察");
+        return result;
+    }
+
+    @Override
+    public List<Map<String, String>> getAiRecommendation(Long userId) {
+        List<Map<String, String>> recommendations = new ArrayList<>();
+        recommendations.add(createRecommendation("胸部CT检查", "家族有肺部疾病史"));
+        recommendations.add(createRecommendation("糖化血红蛋白检测", "血糖偏高"));
+        recommendations.add(createRecommendation("颈动脉超声", "年龄>40岁"));
+        return recommendations;
+    }
+
+    // 辅助方法
+    private Map<String, Object> createPackage(Long id, String name, int price, String suitable) {
+        Map<String, Object> pkg = new HashMap<>();
+        pkg.put("id", id);
+        pkg.put("name", name);
+        pkg.put("price", price);
+        pkg.put("suitable", suitable);
+        return pkg;
+    }
+
+    private Map<String, Object> createCenter(Long id, String name, String address, double rating, String distance, int waitTime) {
+        Map<String, Object> center = new HashMap<>();
+        center.put("id", id);
+        center.put("name", name);
+        center.put("address", address);
+        center.put("rating", rating);
+        center.put("distance", distance);
+        center.put("waitTime", waitTime);
+        return center;
+    }
+
+    private Map<String, Object> createTimeSlot(String time, boolean available, int count) {
+        Map<String, Object> slot = new HashMap<>();
+        slot.put("time", time);
+        slot.put("available", available);
+        slot.put("count", count);
+        return slot;
+    }
+
+    private Map<String, Object> createAppointment(Long id, String packageName, String center, String date, String status) {
+        Map<String, Object> appointment = new HashMap<>();
+        appointment.put("id", id);
+        appointment.put("package", packageName);
+        appointment.put("center", center);
+        appointment.put("date", date);
+        appointment.put("status", status);
+        return appointment;
+    }
+
+    private Map<String, String> createAnalysisSection(String title, String content) {
+        Map<String, String> section = new HashMap<>();
+        section.put("title", title);
+        section.put("content", content);
+        return section;
+    }
+
+    private Map<String, Object> createFinding(String name, String severity, String description) {
+        Map<String, Object> finding = new HashMap<>();
+        finding.put("name", name);
+        finding.put("severity", severity);
+        finding.put("description", description);
+        return finding;
+    }
+
+    private Map<String, String> createRecommendation(String item, String reason) {
+        Map<String, String> rec = new HashMap<>();
+        rec.put("item", item);
+        rec.put("reason", reason);
+        return rec;
     }
 }

@@ -1,5 +1,6 @@
 package com.health.controller;
 
+import com.health.common.Result;
 import com.health.entity.BloodSugarRecord;
 import com.health.service.BloodSugarService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,32 +17,33 @@ public class BloodSugarController {
     private BloodSugarService bloodSugarService;
 
     @GetMapping("/records")
-    public List<BloodSugarRecord> getRecords(@RequestParam Long userId) {
-        return bloodSugarService.getRecords(userId);
+    public Result<List<BloodSugarRecord>> getRecords(@RequestParam Long userId) {
+        return Result.success(bloodSugarService.getRecords(userId));
     }
 
     @PostMapping("/records")
-    public void addRecord(@RequestBody BloodSugarRecord record) {
+    public Result<Void> addRecord(@RequestBody BloodSugarRecord record) {
         bloodSugarService.addRecord(record);
+        return Result.success();
     }
 
     @GetMapping("/trend")
-    public Map<String, Object> getTrend(@RequestParam Long userId, @RequestParam String period) {
-        return bloodSugarService.getTrend(userId, period);
+    public Result<Map<String, Object>> getTrend(@RequestParam Long userId, @RequestParam String period) {
+        return Result.success(bloodSugarService.getTrend(userId, period));
     }
 
     @GetMapping("/prediction")
-    public Map<String, Object> getPrediction(@RequestParam Long userId) {
-        return bloodSugarService.getPrediction(userId);
+    public Result<Map<String, Object>> getPrediction(@RequestParam Long userId) {
+        return Result.success(bloodSugarService.getPrediction(userId));
     }
 
     @PostMapping("/diet/recommendation")
-    public List<Map<String, Object>> getDietRecommendation(@RequestBody Map<String, Double> params) {
-        return bloodSugarService.getDietRecommendation(params.get("bloodSugar"));
+    public Result<List<Map<String, Object>>> getDietRecommendation(@RequestBody Map<String, Double> params) {
+        return Result.success(bloodSugarService.getDietRecommendation(params.get("bloodSugar")));
     }
 
     @PostMapping("/exercise/recommendation")
-    public List<Map<String, Object>> getExerciseRecommendation(@RequestBody Map<String, Double> params) {
-        return bloodSugarService.getExerciseRecommendation(params.get("bloodSugar"));
+    public Result<List<Map<String, Object>>> getExerciseRecommendation(@RequestBody Map<String, Double> params) {
+        return Result.success(bloodSugarService.getExerciseRecommendation(params.get("bloodSugar")));
     }
 }

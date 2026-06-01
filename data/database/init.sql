@@ -1,10 +1,5 @@
 -- DeepSeek 健康管理系统 - 数据库初始化脚本
 
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS health_management
-DEFAULT CHARACTER SET utf8mb4
-DEFAULT COLLATE utf8mb4_unicode_ci;
-
 USE health_management;
 
 -- 用户表
@@ -125,101 +120,16 @@ CREATE TABLE IF NOT EXISTS exercise_records (
 CREATE TABLE IF NOT EXISTS checkup_appointments (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    center_id BIGINT COMMENT '体检中心ID',
-    center_name VARCHAR(100) NOT NULL COMMENT '体检中心名称',
+    hospital_name VARCHAR(100) NOT NULL COMMENT '医院名称',
     appointment_date DATE NOT NULL COMMENT '预约日期',
-    package_type VARCHAR(50) COMMENT '套餐类型',
-    phone VARCHAR(20) COMMENT '联系电话',
-    status VARCHAR(20) DEFAULT '已预约' COMMENT '预约状态',
+    appointment_time VARCHAR(20) COMMENT '预约时段',
+    checkup_items TEXT COMMENT '体检项目',
+    status TINYINT DEFAULT 0 COMMENT '0:待确认, 1:已确认, 2:已完成, 3:已取消',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id),
     INDEX idx_appointment_date (appointment_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 疾病档案表
-CREATE TABLE IF NOT EXISTS disease_records (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    disease_name VARCHAR(100) NOT NULL COMMENT '疾病名称',
-    diagnose_date DATE COMMENT '确诊时间',
-    control_level VARCHAR(20) COMMENT '控制水平: 控制良好/需关注/控制不佳',
-    last_checkup DATE COMMENT '最近复查时间',
-    next_checkup DATE COMMENT '下次复查时间',
-    medications JSON COMMENT '用药信息',
-    status TINYINT DEFAULT 1 COMMENT '0:已结束, 1:进行中',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_disease_name (disease_name)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 疾病监测记录表
-CREATE TABLE IF NOT EXISTS disease_monitor_records (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    disease_id BIGINT NOT NULL,
-    indicator VARCHAR(100) NOT NULL COMMENT '监测指标',
-    value VARCHAR(50) NOT NULL COMMENT '检测值',
-    unit VARCHAR(20) COMMENT '单位',
-    status VARCHAR(20) COMMENT '状态: 正常/偏高/偏低',
-    record_date DATE NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (disease_id) REFERENCES disease_records(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_disease_id (disease_id),
-    INDEX idx_record_date (record_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 预警记录表
-CREATE TABLE IF NOT EXISTS warning_records (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    level VARCHAR(20) NOT NULL COMMENT '预警级别: critical/warning/info',
-    title VARCHAR(200) NOT NULL COMMENT '预警标题',
-    description TEXT COMMENT '预警描述',
-    indicator VARCHAR(100) COMMENT '相关指标',
-    current_value VARCHAR(50) COMMENT '当前数值',
-    normal_range VARCHAR(50) COMMENT '正常范围',
-    suggestions JSON COMMENT '处理建议',
-    is_read TINYINT DEFAULT 0 COMMENT '是否已读',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_level (level),
-    INDEX idx_is_read (is_read)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 预警设置表
-CREATE TABLE IF NOT EXISTS alert_settings (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL UNIQUE,
-    methods JSON COMMENT '预警方式: app/sms/email/phone',
-    time_range_start TIME COMMENT '预警时段开始',
-    time_range_end TIME COMMENT '预警时段结束',
-    emergency_phone VARCHAR(20) COMMENT '紧急联系电话',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- 影像分析记录表
-CREATE TABLE IF NOT EXISTS image_analysis_records (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    image_type VARCHAR(50) NOT NULL COMMENT '影像类型',
-    image_url VARCHAR(255) COMMENT '影像文件URL',
-    risk_level VARCHAR(20) COMMENT '风险等级',
-    findings JSON COMMENT '检查发现',
-    suggestion TEXT COMMENT 'AI建议',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_image_type (image_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 插入测试数据
@@ -237,13 +147,147 @@ INSERT INTO blood_sugar_records (user_id, value, type, measure_time) VALUES
 (1, 6.0, 'fasting', '2024-01-17 07:00:00'),
 (1, 7.5, 'after', '2024-01-17 09:00:00');
 
--- 疾病档案测试数据
-INSERT INTO disease_records (user_id, disease_name, diagnose_date, control_level, last_checkup, next_checkup, medications) VALUES
-(1, '2型糖尿病', '2022-05-15', '控制良好', '2024-01-10', '2024-04-10', '[{"name":"二甲双胍","dosage":"500mg","frequency":"每日两次","time":"早晚餐后","note":"随餐服用"}]'),
-(1, '高血压', '2023-08-20', '需关注', '2024-01-05', '2024-03-05', '[{"name":"氨氯地平","dosage":"5mg","frequency":"每日一次","time":"早晨","note":"不可突然停药"}]');
+-- 血压记录表
+CREATE TABLE IF NOT EXISTS blood_pressure_records (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    systolic INT NOT NULL COMMENT '收缩压(mmHg)',
+    diastolic INT NOT NULL COMMENT '舒张压(mmHg)',
+    heart_rate INT COMMENT '心率(bpm)',
+    measure_time DATETIME NOT NULL COMMENT '测量时间',
+    note TEXT COMMENT '备注',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_measure_time (measure_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 预警记录测试数据
-INSERT INTO warning_records (user_id, level, title, description, indicator, current_value, normal_range, is_read) VALUES
-(1, 'critical', '血糖异常升高', '您最近一次空腹血糖检测值为 8.5mmol/L，远超正常范围（3.9-6.1mmol/L）', '空腹血糖', '8.5mmol/L', '3.9-6.1mmol/L', 0),
-(1, 'warning', '血压波动较大', '您近一周血压波动较大，收缩压在125-145mmHg之间', '收缩压', '145mmHg', '90-139mmHg', 0),
-(1, 'info', '复查提醒', '距离您上次甲状腺检查已过6个月，建议进行复查', '甲状腺B超', '-', '-', 1);
+-- 慢性病管理表
+CREATE TABLE IF NOT EXISTS chronic_disease_records (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    disease_type VARCHAR(50) NOT NULL COMMENT '疾病类型: diabetes/hypertension/heart_disease',
+    diagnosed_date DATE COMMENT '确诊时间',
+    medication VARCHAR(255) COMMENT '当前用药',
+    control_target VARCHAR(255) COMMENT '控制目标',
+    last_checkup_date DATE COMMENT '最近复查日期',
+    status TINYINT DEFAULT 1 COMMENT '0:已康复, 1:控制中, 2:需关注',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_disease_type (disease_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用药记录表
+CREATE TABLE IF NOT EXISTS medication_records (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    medication_name VARCHAR(100) NOT NULL COMMENT '药物名称',
+    dosage VARCHAR(50) COMMENT '剂量',
+    frequency VARCHAR(50) COMMENT '服用频率',
+    purpose VARCHAR(100) COMMENT '用途',
+    start_date DATE COMMENT '开始日期',
+    end_date DATE COMMENT '结束日期',
+    status TINYINT DEFAULT 1 COMMENT '0:已停用, 1:使用中',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 预警记录表
+CREATE TABLE IF NOT EXISTS warning_records (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    warning_type VARCHAR(50) NOT NULL COMMENT '预警类型',
+    warning_level VARCHAR(20) NOT NULL COMMENT '预警级别: high/medium/low',
+    title VARCHAR(200) NOT NULL COMMENT '预警标题',
+    content TEXT COMMENT '预警内容',
+    action_suggestion TEXT COMMENT '处理建议',
+    is_read TINYINT DEFAULT 0 COMMENT '0:未读, 1:已读',
+    is_dismissed TINYINT DEFAULT 0 COMMENT '0:未忽略, 1:已忽略',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read_time DATETIME COMMENT '阅读时间',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_warning_level (warning_level),
+    INDEX idx_is_read (is_read)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 预警阈值设置表
+CREATE TABLE IF NOT EXISTS warning_thresholds (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    threshold_type VARCHAR(50) NOT NULL COMMENT '阈值类型',
+    threshold_value DECIMAL(10,2) NOT NULL COMMENT '阈值',
+    unit VARCHAR(20) COMMENT '单位',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_user_type (user_id, threshold_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 健康目标表
+CREATE TABLE IF NOT EXISTS health_goals (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    goal_name VARCHAR(100) NOT NULL COMMENT '目标名称',
+    target_value VARCHAR(100) COMMENT '目标值',
+    current_value VARCHAR(100) COMMENT '当前值',
+    progress INT DEFAULT 0 COMMENT '进度(0-100)',
+    status VARCHAR(20) DEFAULT 'in-progress' COMMENT '状态: in-progress/completed/failed',
+    start_date DATE COMMENT '开始日期',
+    target_date DATE COMMENT '目标日期',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 影像分析记录表
+CREATE TABLE IF NOT EXISTS image_analysis_records (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    task_id VARCHAR(50) NOT NULL UNIQUE COMMENT '任务ID',
+    image_type VARCHAR(20) NOT NULL COMMENT '影像类型: ct/xray/ultrasound',
+    image_url VARCHAR(255) COMMENT '影像URL',
+    analysis_result TEXT COMMENT '分析结果(JSON)',
+    diagnosis TEXT COMMENT '诊断意见',
+    status VARCHAR(20) DEFAULT 'pending' COMMENT '状态: pending/processing/completed/failed',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    complete_time DATETIME COMMENT '完成时间',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_task_id (task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 插入更多测试数据
+INSERT INTO blood_pressure_records (user_id, systolic, diastolic, heart_rate, measure_time) VALUES
+(1, 128, 82, 72, '2024-01-15 08:00:00'),
+(1, 135, 88, 75, '2024-01-16 08:00:00'),
+(1, 125, 80, 70, '2024-01-17 08:00:00');
+
+INSERT INTO chronic_disease_records (user_id, disease_type, diagnosed_date, medication, control_target) VALUES
+(1, 'diabetes', '2023-06-15', 'metformin 500mg', 'fasting<7.0, postprandial<10.0'),
+(1, 'hypertension', '2022-03-10', 'amlodipine 5mg', '<140/90 mmHg');
+
+INSERT INTO medication_records (user_id, medication_name, dosage, frequency, purpose, status) VALUES
+(1, '二甲双胍', '500mg', '每日2次', '控制血糖', 1),
+(1, '氨氯地平', '5mg', '每日1次', '控制血压', 1),
+(1, '阿托伐他汀', '20mg', '每晚1次', '调节血脂', 1);
+
+INSERT INTO warning_records (user_id, warning_type, warning_level, title, content, is_read) VALUES
+(1, 'blood_sugar', 'high', '血糖严重超标预警', '您今日空腹血糖测量值为8.2mmol/L，已超过警戒线。', 0),
+(1, 'blood_pressure', 'medium', '血压波动预警', '近3天血压测量值波动较大', 0),
+(1, 'weight', 'low', '体重增加提醒', '近一个月体重增加2kg', 1);
+
+INSERT INTO warning_thresholds (user_id, threshold_type, threshold_value, unit) VALUES
+(1, 'blood_sugar_high', 7.0, 'mmol/L'),
+(1, 'blood_pressure_high', 140, 'mmHg'),
+(1, 'heart_rate_high', 100, 'bpm'),
+(1, 'bmi_high', 24, '');
+
+INSERT INTO health_goals (user_id, goal_name, target_value, current_value, progress, status) VALUES
+(1, '血糖达标', '空腹<6.1mmol/L', '6.8mmol/L', 60, 'in-progress'),
+(1, '体重控制', 'BMI<24', 'BMI 25.4', 40, 'in-progress'),
+(1, '血压稳定', '<130/85mmHg', '128/82mmHg', 80, 'in-progress');

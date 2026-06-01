@@ -1,355 +1,304 @@
 <template>
   <div class="disease-management">
-    <el-card class="header-card">
-      <div class="page-header">
-        <h2>疾病管理</h2>
-        <p>跟踪管理慢性疾病，获取专业的疾病管理建议</p>
-      </div>
-    </el-card>
-
     <el-row :gutter="20">
-      <!-- 疾病列表 -->
-      <el-col :span="8">
+      <el-col :span="16">
         <el-card>
           <template #header>
             <div class="card-header">
-              <span>我的疾病档案</span>
-              <el-button type="primary" size="small" @click="showAddDialog = true">添加</el-button>
-            </div>
-          </template>
-
-          <div v-for="(disease, index) in diseases" :key="index"
-               class="disease-item"
-               :class="{ 'active': selectedDisease?.id === disease.id }"
-               @click="selectDisease(disease)">
-            <div class="disease-icon" :style="{ background: disease.color }">
-              {{ disease.name.charAt(0) }}
-            </div>
-            <div class="disease-info">
-              <div class="disease-name">{{ disease.name }}</div>
-              <div class="disease-time">确诊时间: {{ disease.diagnoseDate }}</div>
-            </div>
-            <el-tag :type="disease.controlLevel === '控制良好' ? 'success' : 'warning'" size="small">
-              {{ disease.controlLevel }}
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 疾病详情 -->
-      <el-col :span="16">
-        <el-card v-if="selectedDisease">
-          <template #header>
-            <div class="card-header">
-              <span>{{ selectedDisease.name }} - 管理方案</span>
-              <el-button @click="refreshPlan">
-                <el-icon><Refresh /></el-icon>
-                刷新方案
+              <span>慢性病管理</span>
+              <el-button type="primary" @click="addRecord">
+                <el-icon><Plus /></el-icon>
+                添加记录
               </el-button>
             </div>
           </template>
-
-          <!-- 疾病基本信息 -->
-          <el-descriptions :column="2" border style="margin-bottom: 20px">
-            <el-descriptions-item label="确诊时间">{{ selectedDisease.diagnoseDate }}</el-descriptions-item>
-            <el-descriptions-item label="当前控制">
-              <el-tag :type="selectedDisease.controlLevel === '控制良好' ? 'success' : 'warning'">
-                {{ selectedDisease.controlLevel }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="最近复查">{{ selectedDisease.lastCheckup }}</el-descriptions-item>
-            <el-descriptions-item label="下次复查">{{ selectedDisease.nextCheckup }}</el-descriptions-item>
-          </el-descriptions>
 
           <el-tabs v-model="activeTab">
-            <!-- 用药管理 -->
-            <el-tab-pane label="用药管理" name="medication">
-              <div v-for="(med, idx) in selectedDisease.medications" :key="idx" class="med-item">
-                <div class="med-header">
-                  <span class="med-name">{{ med.name }}</span>
-                  <el-tag size="small">{{ med.frequency }}</el-tag>
-                </div>
-                <div class="med-info">
-                  <span>剂量: {{ med.dosage }}</span>
-                  <span>时间: {{ med.time }}</span>
-                  <span>注意事项: {{ med.note }}</span>
-                </div>
-                <el-divider v-if="idx < selectedDisease.medications.length - 1" />
-              </div>
-              <el-button type="primary" plain style="width: 100%; margin-top: 12px">
-                <el-icon><Plus /></el-icon> 添加用药记录
-              </el-button>
-            </el-tab-pane>
+            <el-tab-pane label="糖尿病管理" name="diabetes">
+              <el-descriptions :column="2" border>
+                <el-descriptions-item label="确诊时间">2023-06-15</el-descriptions-item>
+                <el-descriptions-item label="当前用药">二甲双胍 500mg/次</el-descriptions-item>
+                <el-descriptions-item label="血糖控制目标">空腹<7.0, 餐后<10.0</el-descriptions-item>
+                <el-descriptions-item label="最近复查">2024-12-20</el-descriptions-item>
+              </el-descriptions>
 
-            <!-- 监测指标 -->
-            <el-tab-pane label="监测指标" name="monitor">
-              <div ref="monitorChart" style="height: 300px"></div>
-              <el-table :data="selectedDisease.monitorRecords" style="margin-top: 16px">
+              <h4 style="margin-top: 20px;">血糖监测记录</h4>
+              <el-table :data="diabetesRecords" border>
                 <el-table-column prop="date" label="日期" width="120" />
-                <el-table-column prop="indicator" label="指标" />
-                <el-table-column prop="value" label="数值" />
-                <el-table-column prop="unit" label="单位" width="80" />
-                <el-table-column prop="status" label="状态">
+                <el-table-column prop="fasting" label="空腹血糖" width="100">
                   <template #default="{ row }">
-                    <el-tag :type="row.status === '正常' ? 'success' : row.status === '偏高' ? 'warning' : 'danger'" size="small">
-                      {{ row.status }}
-                    </el-tag>
+                    <span :class="{ 'warning': row.fasting > 7.0 }">{{ row.fasting }}</span>
                   </template>
                 </el-table-column>
+                <el-table-column prop="postprandial" label="餐后血糖" width="100">
+                  <template #default="{ row }">
+                    <span :class="{ 'warning': row.postprandial > 10.0 }">{{ row.postprandial }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="medication" label="用药情况" />
+                <el-table-column prop="diet" label="饮食记录" />
+                <el-table-column prop="note" label="备注" />
               </el-table>
             </el-tab-pane>
 
-            <!-- 饮食指导 -->
-            <el-tab-pane label="饮食指导" name="diet">
-              <el-alert title="饮食建议" type="info" :closable="false" show-icon style="margin-bottom: 16px">
-                以下是根据您的疾病情况生成的个性化饮食建议
-              </el-alert>
-              <div v-for="(tip, idx) in selectedDisease.dietTips" :key="idx" class="diet-tip-item">
-                <el-icon :style="{ color: tip.type === '推荐' ? '#67C23A' : '#F56C6C' }">
-                  <CircleCheckFilled v-if="tip.type === '推荐'" />
-                  <CircleCloseFilled v-else />
-                </el-icon>
-                <span>{{ tip.content }}</span>
-              </div>
+            <el-tab-pane label="高血压管理" name="hypertension">
+              <el-descriptions :column="2" border>
+                <el-descriptions-item label="确诊时间">2022-03-10</el-descriptions-item>
+                <el-descriptions-item label="当前用药">氨氯地平 5mg/次</el-descriptions-item>
+                <el-descriptions-item label="血压控制目标"><140/90 mmHg</el-descriptions-item>
+                <el-descriptions-item label="最近复查">2025-01-05</el-descriptions-item>
+              </el-descriptions>
+
+              <h4 style="margin-top: 20px;">血压监测记录</h4>
+              <el-table :data="hypertensionRecords" border>
+                <el-table-column prop="date" label="日期" width="120" />
+                <el-table-column prop="systolic" label="收缩压" width="80">
+                  <template #default="{ row }">
+                    <span :class="{ 'warning': row.systolic > 140 }">{{ row.systolic }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="diastolic" label="舒张压" width="80">
+                  <template #default="{ row }">
+                    <span :class="{ 'warning': row.diastolic > 90 }">{{ row.diastolic }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="heartRate" label="心率" width="80" />
+                <el-table-column prop="medication" label="用药情况" />
+                <el-table-column prop="note" label="备注" />
+              </el-table>
             </el-tab-pane>
 
-            <!-- 运动建议 -->
-            <el-tab-pane label="运动建议" name="exercise">
-              <div v-for="(tip, idx) in selectedDisease.exerciseTips" :key="idx" class="exercise-tip-item">
-                <div class="tip-title">{{ tip.title }}</div>
-                <div class="tip-content">{{ tip.content }}</div>
-                <el-tag size="small" :type="tip.safe ? 'success' : 'danger'">
-                  {{ tip.safe ? '推荐' : '避免' }}
-                </el-tag>
-              </div>
-            </el-tab-pane>
-
-            <!-- AI咨询 -->
-            <el-tab-pane label="AI咨询" name="consult">
-              <div class="consult-area">
-                <div class="chat-messages">
-                  <div v-for="(msg, idx) in chatMessages" :key="idx" :class="['message', msg.role]">
-                    <div class="message-avatar">
-                      <el-avatar v-if="msg.role === 'user'" :size="36">我</el-avatar>
-                      <el-avatar v-else :size="36" style="background: #409EFF">AI</el-avatar>
-                    </div>
-                    <div class="message-content">{{ msg.content }}</div>
-                  </div>
+            <el-tab-pane label="用药提醒" name="medication">
+              <div v-for="med in medications" :key="med.name" class="medication-item">
+                <div class="med-info">
+                  <h4>{{ med.name }}</h4>
+                  <p>{{ med.dosage }} | {{ med.frequency }}</p>
+                  <p class="med-purpose">用途: {{ med.purpose }}</p>
                 </div>
-                <div class="chat-input">
-                  <el-input v-model="chatInput" placeholder="输入您的问题..." @keyup.enter="sendMessage">
-                    <template #append>
-                      <el-button @click="sendMessage">
-                        <el-icon><Promotion /></el-icon>
-                      </el-button>
-                    </template>
-                  </el-input>
+                <div class="med-status">
+                  <el-tag :type="med.taken ? 'success' : 'warning'">
+                    {{ med.taken ? '已服用' : '待服用' }}
+                  </el-tag>
+                  <el-button v-if="!med.taken" size="small" type="primary" @click="markTaken(med)">
+                    确认服用
+                  </el-button>
                 </div>
               </div>
             </el-tab-pane>
           </el-tabs>
         </el-card>
+      </el-col>
 
-        <el-empty v-else description="请从左侧选择一个疾病查看详情" />
+      <el-col :span="8">
+        <el-card>
+          <template #header>
+            <span>复查提醒</span>
+          </template>
+          <div v-for="item in followUps" :key="item.type" class="followup-item">
+            <div class="followup-icon" :class="item.urgent ? 'urgent' : 'normal'">
+              <el-icon><Calendar /></el-icon>
+            </div>
+            <div class="followup-info">
+              <h4>{{ item.type }}</h4>
+              <p>{{ item.date }}</p>
+              <p class="days-left">{{ item.daysLeft }}</p>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card style="margin-top: 20px;">
+          <template #header>
+            <span>AI健康建议</span>
+          </template>
+          <div v-for="(advice, index) in aiAdvice" :key="index" class="advice-item">
+            <el-icon :style="{ color: advice.color }"><InfoFilled /></el-icon>
+            <span>{{ advice.text }}</span>
+          </div>
+        </el-card>
       </el-col>
     </el-row>
 
-    <!-- 添加疾病对话框 -->
-    <el-dialog v-model="showAddDialog" title="添加疾病记录" width="500px">
-      <el-form :model="newDisease" label-width="100px">
-        <el-form-item label="疾病名称">
-          <el-input v-model="newDisease.name" placeholder="如：2型糖尿病" />
+    <!-- 添加记录对话框 -->
+    <el-dialog v-model="dialogVisible" title="添加监测记录" width="500px">
+      <el-form :model="recordForm" label-width="100px">
+        <el-form-item label="记录类型">
+          <el-radio-group v-model="recordForm.type">
+            <el-radio label="bloodSugar">血糖</el-radio>
+            <el-radio label="bloodPressure">血压</el-radio>
+          </el-radio-group>
         </el-form-item>
-        <el-form-item label="确诊时间">
-          <el-date-picker v-model="newDisease.diagnoseDate" type="date" style="width: 100%" />
+        <el-form-item v-if="recordForm.type === 'bloodSugar'" label="血糖值">
+          <el-input-number v-model="recordForm.value" :min="2" :max="30" :step="0.1" />
+          <span style="margin-left: 10px;">mmol/L</span>
         </el-form-item>
-        <el-form-item label="当前状态">
-          <el-select v-model="newDisease.controlLevel" style="width: 100%">
-            <el-option label="控制良好" value="控制良好" />
-            <el-option label="需关注" value="需关注" />
-            <el-option label="控制不佳" value="控制不佳" />
-          </el-select>
+        <template v-if="recordForm.type === 'bloodPressure'">
+          <el-form-item label="收缩压">
+            <el-input-number v-model="recordForm.systolic" :min="60" :max="250" />
+          </el-form-item>
+          <el-form-item label="舒张压">
+            <el-input-number v-model="recordForm.diastolic" :min="40" :max="150" />
+          </el-form-item>
+        </template>
+        <el-form-item label="备注">
+          <el-input v-model="recordForm.note" type="textarea" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="addDisease">确定</el-button>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveRecord">保存</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, nextTick, watch } from 'vue'
+import { ref } from 'vue'
+import { Plus, Calendar, InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { Refresh, Plus, Promotion, CircleCheckFilled, CircleCloseFilled } from '@element-plus/icons-vue'
-import axios from 'axios'
 
-const selectedDisease = ref(null)
-const activeTab = ref('medication')
-const showAddDialog = ref(false)
-const chatInput = ref('')
-const chatMessages = ref([
-  { role: 'assistant', content: '您好！我是您的AI健康顾问。关于您的疾病管理，有什么我可以帮助的吗？' }
+const activeTab = ref('diabetes')
+const dialogVisible = ref(false)
+const recordForm = ref({ type: 'bloodSugar', value: 5.6, systolic: 120, diastolic: 80, note: '' })
+
+const diabetesRecords = ref([
+  { date: '2025-01-10', fasting: 6.2, postprandial: 8.5, medication: '二甲双胍 500mg', diet: '正常饮食', note: '' },
+  { date: '2025-01-09', fasting: 6.8, postprandial: 9.2, medication: '二甲双胍 500mg', diet: '晚餐偏多', note: '需控制晚餐量' },
+  { date: '2025-01-08', fasting: 5.9, postprandial: 7.8, medication: '二甲双胍 500mg', diet: '正常饮食', note: '' }
 ])
 
-const newDisease = reactive({
-  name: '',
-  diagnoseDate: '',
-  controlLevel: '控制良好'
-})
-
-const diseases = ref([
-  {
-    id: 1, name: '2型糖尿病', diagnoseDate: '2022-05-15', controlLevel: '控制良好',
-    lastCheckup: '2024-01-10', nextCheckup: '2024-04-10', color: '#409EFF',
-    medications: [
-      { name: '二甲双胍', dosage: '500mg', frequency: '每日两次', time: '早晚餐后', note: '随餐服用' },
-      { name: '格列美脲', dosage: '2mg', frequency: '每日一次', time: '早餐前', note: '注意低血糖' }
-    ],
-    monitorRecords: [
-      { date: '2024-01-10', indicator: '空腹血糖', value: '6.2', unit: 'mmol/L', status: '正常' },
-      { date: '2024-01-10', indicator: '餐后2h血糖', value: '8.5', unit: 'mmol/L', status: '正常' },
-      { date: '2024-01-10', indicator: '糖化血红蛋白', value: '6.8', unit: '%', status: '正常' },
-      { date: '2024-01-05', indicator: '空腹血糖', value: '7.1', unit: 'mmol/L', status: '偏高' }
-    ],
-    dietTips: [
-      { type: '推荐', content: '多吃粗粮、杂粮，如燕麦、糙米等' },
-      { type: '推荐', content: '多吃绿叶蔬菜，每天至少500g' },
-      { type: '推荐', content: '适量摄入优质蛋白，如鱼、鸡胸肉' },
-      { type: '避免', content: '避免含糖饮料和甜食' },
-      { type: '避免', content: '避免精制碳水化合物，如白米饭、白面包' },
-      { type: '避免', content: '避免油炸食品和高脂肪食物' }
-    ],
-    exerciseTips: [
-      { title: '快走', content: '每次30分钟，每周5次', safe: true },
-      { title: '游泳', content: '每次45分钟，每周3次', safe: true },
-      { title: '骑自行车', content: '每次30分钟，每周3次', safe: true },
-      { title: '高强度无氧运动', content: '可能导致血糖波动', safe: false }
-    ]
-  },
-  {
-    id: 2, name: '高血压', diagnoseDate: '2023-08-20', controlLevel: '需关注',
-    lastCheckup: '2024-01-05', nextCheckup: '2024-03-05', color: '#E6A23C',
-    medications: [
-      { name: '氨氯地平', dosage: '5mg', frequency: '每日一次', time: '早晨', note: '不可突然停药' }
-    ],
-    monitorRecords: [
-      { date: '2024-01-05', indicator: '收缩压', value: '142', unit: 'mmHg', status: '偏高' },
-      { date: '2024-01-05', indicator: '舒张压', value: '92', unit: 'mmHg', status: '偏高' },
-      { date: '2024-01-01', indicator: '收缩压', value: '138', unit: 'mmHg', status: '正常' },
-      { date: '2024-01-01', indicator: '舒张压', value: '88', unit: 'mmHg', status: '正常' }
-    ],
-    dietTips: [
-      { type: '推荐', content: '低盐饮食，每天食盐摄入不超过5g' },
-      { type: '推荐', content: '多吃富含钾的食物，如香蕉、土豆' },
-      { type: '避免', content: '避免腌制食品和加工食品' },
-      { type: '避免', content: '避免饮酒' }
-    ],
-    exerciseTips: [
-      { title: '散步', content: '每次30分钟，每天', safe: true },
-      { title: '太极拳', content: '每次40分钟，每周3次', safe: true },
-      { title: '举重', content: '可能导致血压升高', safe: false }
-    ]
-  }
+const hypertensionRecords = ref([
+  { date: '2025-01-10', systolic: 128, diastolic: 82, heartRate: 72, medication: '氨氯地平 5mg', note: '' },
+  { date: '2025-01-09', systolic: 135, diastolic: 88, heartRate: 75, medication: '氨氯地平 5mg', note: '情绪紧张' },
+  { date: '2025-01-08', systolic: 125, diastolic: 80, heartRate: 70, medication: '氨氯地平 5mg', note: '' }
 ])
 
-const selectDisease = (disease) => {
-  selectedDisease.value = disease
-  activeTab.value = 'medication'
+const medications = ref([
+  { name: '二甲双胍', dosage: '500mg', frequency: '每日2次，餐后服用', purpose: '控制血糖', taken: true },
+  { name: '氨氯地平', dosage: '5mg', frequency: '每日1次，早晨服用', purpose: '控制血压', taken: true },
+  { name: '阿托伐他汀', dosage: '20mg', frequency: '每日1次，睡前服用', purpose: '调节血脂', taken: false }
+])
+
+const followUps = ref([
+  { type: '内分泌科复查', date: '2025-02-15', daysLeft: '还有36天', urgent: false },
+  { type: '心血管科复查', date: '2025-01-25', daysLeft: '还有15天', urgent: true },
+  { type: '年度体检', date: '2025-06-01', daysLeft: '还有142天', urgent: false }
+])
+
+const aiAdvice = ref([
+  { text: '近期血糖控制良好，继续保持当前用药和饮食方案', color: '#67C23A' },
+  { text: '建议每周至少进行150分钟中等强度有氧运动', color: '#409EFF' },
+  { text: '血压偶有波动，注意情绪管理和规律作息', color: '#E6A23C' },
+  { text: '下次复查请携带近3个月的监测记录', color: '#909399' }
+])
+
+const addRecord = () => {
+  recordForm.value = { type: 'bloodSugar', value: 5.6, systolic: 120, diastolic: 80, note: '' }
+  dialogVisible.value = true
 }
 
-const refreshPlan = () => {
-  ElMessage.success('已刷新管理方案')
-}
-
-const addDisease = () => {
-  if (!newDisease.name) {
-    ElMessage.warning('请输入疾病名称')
-    return
-  }
-  diseases.value.push({
-    id: Date.now(),
-    name: newDisease.name,
-    diagnoseDate: newDisease.diagnoseDate,
-    controlLevel: newDisease.controlLevel,
-    lastCheckup: '-',
-    nextCheckup: '-',
-    color: '#909399',
-    medications: [],
-    monitorRecords: [],
-    dietTips: [],
-    exerciseTips: []
-  })
-  showAddDialog.value = false
-  ElMessage.success('添加成功')
-}
-
-const sendMessage = async () => {
-  if (!chatInput.value.trim()) return
-  const userMsg = chatInput.value
-  chatMessages.value.push({ role: 'user', content: userMsg })
-  chatInput.value = ''
-
-  try {
-    const res = await axios.post('/api/health-manager/consult', {
-      disease: selectedDisease.value.name,
-      question: userMsg
+const saveRecord = () => {
+  const today = new Date().toISOString().split('T')[0]
+  if (recordForm.value.type === 'bloodSugar') {
+    diabetesRecords.value.unshift({
+      date: today,
+      fasting: recordForm.value.value,
+      postprandial: '-',
+      medication: '二甲双胍 500mg',
+      diet: '',
+      note: recordForm.value.note
     })
-    chatMessages.value.push({ role: 'assistant', content: res.data.answer })
-  } catch {
-    chatMessages.value.push({
-      role: 'assistant',
-      content: '根据您的情况，建议您定期监测相关指标，按时服药，保持良好的生活习惯。如有不适请及时就医。'
+  } else {
+    hypertensionRecords.value.unshift({
+      date: today,
+      systolic: recordForm.value.systolic,
+      diastolic: recordForm.value.diastolic,
+      heartRate: '-',
+      medication: '氨氯地平 5mg',
+      note: recordForm.value.note
     })
   }
+  dialogVisible.value = false
+  ElMessage.success('记录保存成功')
+}
+
+const markTaken = (med) => {
+  med.taken = true
+  ElMessage.success(`${med.name} 已标记为已服用`)
 }
 </script>
 
 <style scoped>
-.disease-management { padding: 20px; }
-.header-card { margin-bottom: 20px; }
-.page-header h2 { margin: 0 0 8px 0; color: #303133; }
-.page-header p { margin: 0; color: #909399; font-size: 14px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-
-.disease-item {
-  display: flex; align-items: center; padding: 12px;
-  border-radius: 8px; cursor: pointer; transition: all 0.3s;
-  margin-bottom: 8px; border: 2px solid transparent;
+.disease-management {
+  padding: 20px;
 }
-.disease-item:hover { background: #f5f7fa; }
-.disease-item.active { background: #ecf5ff; border-color: #409EFF; }
-.disease-icon {
-  width: 48px; height: 48px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 20px; font-weight: bold; margin-right: 12px;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.disease-info { flex: 1; }
-.disease-name { font-weight: 500; color: #303133; }
-.disease-time { font-size: 12px; color: #909399; margin-top: 4px; }
-
-.med-item { padding: 12px; background: #f5f7fa; border-radius: 8px; margin-bottom: 8px; }
-.med-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.med-name { font-weight: 500; color: #303133; }
-.med-info { display: flex; gap: 16px; color: #606266; font-size: 13px; }
-
-.diet-tip-item, .exercise-tip-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px; background: #f5f7fa; border-radius: 8px; margin-bottom: 8px;
+.warning {
+  color: #F56C6C;
+  font-weight: bold;
 }
-.exercise-tip-item { justify-content: space-between; }
-.tip-title { font-weight: 500; color: #303133; }
-.tip-content { flex: 1; color: #606266; }
-
-.consult-area { display: flex; flex-direction: column; height: 400px; }
-.chat-messages { flex: 1; overflow-y: auto; padding: 16px; }
-.message { display: flex; gap: 12px; margin-bottom: 16px; }
-.message.user { flex-direction: row-reverse; }
-.message-content {
-  max-width: 70%; padding: 12px; border-radius: 12px;
-  background: #f0f2f5; color: #303133; line-height: 1.6;
+.medication-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
-.message.user .message-content { background: #409EFF; color: #fff; }
-.chat-input { padding: 16px 0; }
+.med-info h4 {
+  margin: 0 0 5px 0;
+}
+.med-info p {
+  margin: 2px 0;
+  color: #666;
+  font-size: 13px;
+}
+.med-purpose {
+  color: #999 !important;
+}
+.med-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.followup-item {
+  display: flex;
+  gap: 15px;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+.followup-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.followup-icon.normal { background: #e6f7ff; color: #409EFF; }
+.followup-icon.urgent { background: #fff2f0; color: #F56C6C; }
+.followup-info h4 {
+  margin: 0 0 5px 0;
+}
+.followup-info p {
+  margin: 2px 0;
+  color: #666;
+  font-size: 13px;
+}
+.days-left {
+  color: #409EFF !important;
+  font-weight: bold;
+}
+.advice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
 </style>

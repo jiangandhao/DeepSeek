@@ -1,46 +1,131 @@
 import request from '@/utils/request'
 
-// 搜索体检中心
-export function searchCenters(data) {
-  return request.post('/api/checkup/search-centers', data)
+// 体检套餐相关
+export function getCheckupPackages() {
+  return request({
+    url: '/checkup/packages',
+    method: 'get'
+  })
 }
 
-// 创建预约
+export function getPackageDetail(id) {
+  return request({
+    url: `/checkup/packages/${id}`,
+    method: 'get'
+  })
+}
+
+// 体检机构相关
+export function getCheckupCenters(params) {
+  return request({
+    url: '/checkup/centers',
+    method: 'get',
+    params
+  })
+}
+
+export function getCenterDetail(id) {
+  return request({
+    url: `/checkup/centers/${id}`,
+    method: 'get'
+  })
+}
+
+// 预约相关
 export function createAppointment(data) {
-  return request.post('/api/checkup/appointment', data)
+  return request({
+    url: '/checkup/appointments',
+    method: 'post',
+    data
+  })
 }
 
-// 获取预约列表
 export function getAppointments(params) {
-  return request.get('/api/checkup/appointments', { params })
+  return request({
+    url: '/checkup/appointments',
+    method: 'get',
+    params
+  })
 }
 
-// 取消预约
+export function getAppointmentDetail(id) {
+  return request({
+    url: `/checkup/appointments/${id}`,
+    method: 'get'
+  })
+}
+
 export function cancelAppointment(id) {
-  return request.delete(`/api/checkup/appointment/${id}`)
+  return request({
+    url: `/checkup/appointments/${id}/cancel`,
+    method: 'put'
+  })
 }
 
-// 获取体检报告列表
+// 体检报告相关
 export function getReports(params) {
-  return request.get('/api/checkup/reports', { params })
+  return request({
+    url: '/checkup/reports',
+    method: 'get',
+    params
+  })
 }
 
-// 获取报告详情
 export function getReportDetail(id) {
-  return request.get(`/api/checkup/report/${id}`)
+  return request({
+    url: `/checkup/reports/${id}`,
+    method: 'get'
+  })
+}
+
+export function exportReport(id) {
+  return request({
+    url: `/checkup/reports/${id}/export`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+// AI报告解读
+export function analyzeReport(reportId) {
+  return request({
+    url: `/checkup/reports/${reportId}/analyze`,
+    method: 'post'
+  })
 }
 
 // 影像分析
 export function analyzeImage(data) {
-  return request.post('/api/checkup/image-analysis', data)
+  return request({
+    url: '/checkup/image/analyze',
+    method: 'post',
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    data
+  })
 }
 
-// 获取分析历史
-export function getAnalysisHistory(params) {
-  return request.get('/api/checkup/analysis-history', { params })
+export function getAnalysisResult(taskId) {
+  return request({
+    url: `/checkup/image/result/${taskId}`,
+    method: 'get'
+  })
 }
 
-// 获取套餐列表
-export function getPackages(params) {
-  return request.get('/api/checkup/packages', { params })
+// 时间槽查询
+export function getTimeSlots(centerId, date) {
+  return request({
+    url: '/checkup/timeslots',
+    method: 'get',
+    params: { centerId, date }
+  })
+}
+
+// AI智能推荐
+export function getAiRecommendation() {
+  return request({
+    url: '/checkup/recommendation',
+    method: 'get'
+  })
 }

@@ -1,51 +1,140 @@
 import request from '@/utils/request'
 
-// 获取风险评估结果
+// 风险评估相关
 export function getRiskAssessment() {
-  return request.get('/api/risk-warning/assessment')
+  return request({
+    url: '/risk/assessment',
+    method: 'get'
+  })
 }
 
-// 刷新风险评估
-export function refreshAssessment() {
-  return request.post('/api/risk-warning/refresh-assessment')
+export function submitAssessment(data) {
+  return request({
+    url: '/risk/assessment',
+    method: 'post',
+    data
+  })
 }
 
-// 获取预警列表
+export function getRiskDetail(diseaseType) {
+  return request({
+    url: `/risk/assessment/${diseaseType}`,
+    method: 'get'
+  })
+}
+
+// 风险分级
+export function getRiskLevels() {
+  return request({
+    url: '/risk/levels',
+    method: 'get'
+  })
+}
+
+export function getRiskFactors() {
+  return request({
+    url: '/risk/factors',
+    method: 'get'
+  })
+}
+
+// 预警相关
 export function getWarnings(params) {
-  return request.get('/api/risk-warning/warnings', { params })
+  return request({
+    url: '/risk/warnings',
+    method: 'get',
+    params
+  })
 }
 
-// 标记预警已读
+export function getWarningDetail(id) {
+  return request({
+    url: `/risk/warnings/${id}`,
+    method: 'get'
+  })
+}
+
 export function markWarningRead(id) {
-  return request.put(`/api/risk-warning/warning/${id}/read`)
+  return request({
+    url: `/risk/warnings/${id}/read`,
+    method: 'put'
+  })
 }
 
-// 获取预警设置
-export function getAlertSettings() {
-  return request.get('/api/risk-warning/settings')
+export function markAllWarningsRead() {
+  return request({
+    url: '/risk/warnings/read-all',
+    method: 'put'
+  })
 }
 
-// 更新预警设置
-export function updateAlertSettings(data) {
-  return request.put('/api/risk-warning/settings', data)
+export function dismissWarning(id) {
+  return request({
+    url: `/risk/warnings/${id}/dismiss`,
+    method: 'put'
+  })
 }
 
-// 获取预防方案列表
-export function getPreventionPlans() {
-  return request.get('/api/risk-warning/prevention-plans')
+// 预警设置
+export function getWarningThresholds() {
+  return request({
+    url: '/risk/thresholds',
+    method: 'get'
+  })
 }
 
-// 获取疾病预防方案详情
-export function getPreventionPlanDetail(diseaseId) {
-  return request.get(`/api/risk-warning/prevention-plan/${diseaseId}`)
+export function updateWarningThresholds(data) {
+  return request({
+    url: '/risk/thresholds',
+    method: 'put',
+    data
+  })
 }
 
-// 导出预防方案
-export function exportPreventionPlan(diseaseId) {
-  return request.get(`/api/risk-warning/prevention-plan/${diseaseId}/export`, { responseType: 'blob' })
+// 预警统计
+export function getWarningStats() {
+  return request({
+    url: '/risk/warnings/stats',
+    method: 'get'
+  })
 }
 
-// 获取风险趋势数据
-export function getRiskTrend(params) {
-  return request.get('/api/risk-warning/trend', { params })
+// 预防方案
+export function getPreventionPlan() {
+  return request({
+    url: '/risk/prevention-plan',
+    method: 'get'
+  })
+}
+
+export function generatePreventionPlan(data) {
+  return request({
+    url: '/risk/prevention-plan/generate',
+    method: 'post',
+    data
+  })
+}
+
+// 健康目标
+export function getHealthGoals() {
+  return request({
+    url: '/risk/goals',
+    method: 'get'
+  })
+}
+
+export function updateHealthGoal(id, data) {
+  return request({
+    url: `/risk/goals/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+// 健康建议
+export function getHealthAdvice() {
+  return request({
+    url: '/risk/advice',
+    method: 'get'
+  })
 }

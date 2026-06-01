@@ -134,6 +134,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { Monitor, CircleCheck, Warning, DataLine } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getBloodSugarRecords, addBloodSugarRecord, getDietRecommendation, getExerciseRecommendation } from '../../api/bloodSugar'
 

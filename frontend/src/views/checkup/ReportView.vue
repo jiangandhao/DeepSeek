@@ -1,293 +1,343 @@
 <template>
   <div class="report-view">
-    <el-card class="header-card">
-      <div class="page-header">
-        <h2>体检报告查看</h2>
-        <p>智能解读体检报告，可视化展示健康指标变化趋势</p>
-      </div>
-    </el-card>
-
     <el-row :gutter="20">
-      <!-- 左侧：报告列表 -->
-      <el-col :span="6">
+      <el-col :span="16">
         <el-card>
           <template #header>
-            <span>我的报告</span>
-          </template>
-          <div v-for="(report, index) in reports" :key="index"
-               class="report-item"
-               :class="{ 'active': selectedReport?.id === report.id }"
-               @click="selectReport(report)">
-            <div class="report-date">{{ report.date }}</div>
-            <div class="report-type">{{ report.type }}</div>
-            <el-tag size="small" :type="report.status === '已解读' ? 'success' : 'info'">
-              {{ report.status }}
-            </el-tag>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 右侧：报告详情 -->
-      <el-col :span="18">
-        <el-card v-if="selectedReport">
-          <template #header>
             <div class="card-header">
-              <span>{{ selectedReport.date }} - {{ selectedReport.type }}</span>
+              <span>体检报告</span>
               <div>
-                <el-button type="primary" @click="exportReport">
-                  <el-icon><Download /></el-icon> 导出报告
+                <el-button @click="exportReport">
+                  <el-icon><Download /></el-icon> 导出PDF
                 </el-button>
-                <el-button @click="shareReport">
-                  <el-icon><Share /></el-icon> 分享
+                <el-button type="primary" @click="analyzeReport" :loading="analyzing">
+                  <el-icon><MagicStick /></el-icon> AI解读报告
                 </el-button>
               </div>
             </div>
           </template>
 
-          <!-- 报告摘要 -->
-          <el-row :gutter="20" style="margin-bottom: 20px">
-            <el-col :span="6">
-              <el-statistic title="总评分" :value="selectedReport.score" :suffix="'分'">
-                <template #suffix>
-                  <span :style="{ color: selectedReport.score >= 80 ? '#67C23A' : '#F56C6C' }">分</span>
-                </template>
-              </el-statistic>
-            </el-col>
-            <el-col :span="6">
-              <el-statistic title="异常项目" :value="selectedReport.abnormalCount" :suffix="'项'" />
-            </el-col>
-            <el-col :span="6">
-              <el-statistic title="正常项目" :value="selectedReport.normalCount" :suffix="'项'" />
-            </el-col>
-            <el-col :span="6">
-              <el-statistic title="建议复查" :value="selectedReport.reviewCount" :suffix="'项'" />
-            </el-col>
-          </el-row>
+          <el-tabs v-model="activeTab">
+            <el-tab-pane label="报告概览" name="overview">
+              <div class="report-header">
+                <h3>{{ reportInfo.hospital }} 体检报告</h3>
+                <p>体检日期: {{ reportInfo.date }} | 报告编号: {{ reportInfo.reportNo }}</p>
+              </div>
 
-          <el-divider />
+              <el-divider />
 
-          <!-- 指标详情 -->
-          <el-tabs v-model="activeCategory">
-            <el-tab-pane label="全部指标" name="all">
-              <el-table :data="selectedReport.items" style="width: 100%">
-                <el-table-column prop="category" label="分类" width="120" />
-                <el-table-column prop="name" label="项目名称" width="150" />
-                <el-table-column prop="value" label="检测值" width="100" />
-                <el-table-column prop="unit" label="单位" width="80" />
-                <el-table-column prop="referenceRange" label="参考范围" width="120" />
-                <el-table-column label="状态" width="100">
+              <h4>总体评估</h4>
+              <div class="overall-result">
+                <div class="result-icon" :class="reportInfo.overallLevel">
+                  <el-icon :size="48"><component :is="reportInfo.overallIcon" /></el-icon>
+                </div>
+                <div class="result-text">
+                  <h3>{{ reportInfo.overallText }}</h3>
+                  <p>{{ reportInfo.summary }}</p>
+                </div>
+              </div>
+
+              <el-divider />
+
+              <h4>异常指标汇总</h4>
+              <el-table :data="abnormalItems" border>
+                <el-table-column prop="category" label="检查项目" width="150" />
+                <el-table-column prop="item" label="指标名称" width="180" />
+                <el-table-column prop="result" label="检查结果" width="120">
                   <template #default="{ row }">
-                    <el-tag :type="getStatusType(row.status)" size="small">{{ row.status }}</el-tag>
+                    <span class="abnormal-value">{{ row.result }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="说明">
+                <el-table-column prop="reference" label="参考范围" width="120" />
+                <el-table-column prop="status" label="状态" width="80">
                   <template #default="{ row }">
-                    <span class="item-desc">{{ row.description }}</span>
+                    <el-tag :type="row.status === '偏高' ? 'danger' : 'warning'" size="small">
+                      {{ row.status }}
+                    </el-tag>
                   </template>
                 </el-table-column>
+                <el-table-column prop="suggestion" label="建议" />
               </el-table>
             </el-tab-pane>
 
-            <el-tab-pane label="异常项目" name="abnormal">
-              <div v-for="(item, index) in abnormalItems" :key="index" class="abnormal-item">
-                <div class="abnormal-header">
-                  <span class="item-name">{{ item.name }}</span>
-                  <el-tag type="danger" size="small">{{ item.status }}</el-tag>
-                </div>
-                <div class="abnormal-value">
-                  检测值: <strong>{{ item.value }} {{ item.unit }}</strong>
-                  (参考范围: {{ item.referenceRange }})
-                </div>
-                <div class="abnormal-desc">
-                  <el-alert :title="item.description" type="warning" :closable="false" show-icon />
-                </div>
-                <div class="abnormal-suggestion">
-                  <strong>AI建议:</strong> {{ item.suggestion }}
-                </div>
-              </div>
-              <el-empty v-if="!abnormalItems.length" description="没有异常项目" />
+            <el-tab-pane label="详细报告" name="detail">
+              <el-collapse v-model="activeCategories">
+                <el-collapse-item v-for="category in reportDetails" :key="category.name" :title="category.name" :name="category.name">
+                  <el-table :data="category.items" border size="small">
+                    <el-table-column prop="item" label="项目" width="180" />
+                    <el-table-column prop="result" label="结果" width="120">
+                      <template #default="{ row }">
+                        <span :class="{ 'abnormal': row.isAbnormal }">{{ row.result }}</span>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="unit" label="单位" width="80" />
+                    <el-table-column prop="reference" label="参考范围" width="120" />
+                    <el-table-column prop="status" label="状态" width="80">
+                      <template #default="{ row }">
+                        <el-tag :type="row.isAbnormal ? 'danger' : 'success'" size="small">
+                          {{ row.isAbnormal ? '异常' : '正常' }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </el-collapse-item>
+              </el-collapse>
             </el-tab-pane>
 
             <el-tab-pane label="趋势分析" name="trend">
-              <div ref="trendChart" style="height: 400px"></div>
-            </el-tab-pane>
-
-            <el-tab-pane label="AI解读" name="ai">
-              <div class="ai-analysis">
-                <el-alert title="AI智能解读" type="info" :closable="false" show-icon style="margin-bottom: 16px">
-                  以下分析基于您的体检数据，由AI自动生成，仅供参考
-                </el-alert>
-
-                <div class="analysis-section">
-                  <h4>整体健康状况</h4>
-                  <p>{{ selectedReport.aiAnalysis.overall }}</p>
-                </div>
-
-                <div class="analysis-section">
-                  <h4>重点关注项目</h4>
-                  <ul>
-                    <li v-for="(item, idx) in selectedReport.aiAnalysis.keyFindings" :key="idx">
-                      {{ item }}
-                    </li>
-                  </ul>
-                </div>
-
-                <div class="analysis-section">
-                  <h4>改善建议</h4>
-                  <el-timeline>
-                    <el-timeline-item
-                      v-for="(rec, idx) in selectedReport.aiAnalysis.recommendations"
-                      :key="idx"
-                      :type="rec.urgent ? 'danger' : 'primary'"
-                    >
-                      {{ rec.content }}
-                    </el-timeline-item>
-                  </el-timeline>
-                </div>
-              </div>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-card>
+                    <template #header><span>血糖趋势</span></template>
+                    <div ref="bloodSugarChart" style="height: 250px;"></div>
+                  </el-card>
+                </el-col>
+                <el-col :span="12">
+                  <el-card>
+                    <template #header><span>血压趋势</span></template>
+                    <div ref="bloodPressureChart" style="height: 250px;"></div>
+                  </el-card>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20" style="margin-top: 20px;">
+                <el-col :span="12">
+                  <el-card>
+                    <template #header><span>血脂趋势</span></template>
+                    <div ref="lipidChart" style="height: 250px;"></div>
+                  </el-card>
+                </el-col>
+                <el-col :span="12">
+                  <el-card>
+                    <template #header><span>肝功能趋势</span></template>
+                    <div ref="liverChart" style="height: 250px;"></div>
+                  </el-card>
+                </el-col>
+              </el-row>
             </el-tab-pane>
           </el-tabs>
         </el-card>
+      </el-col>
 
-        <el-empty v-else description="请从左侧选择一份报告查看" />
+      <el-col :span="8">
+        <el-card v-if="aiAnalysis">
+          <template #header>
+            <span><el-icon><MagicStick /></el-icon> AI报告解读</span>
+          </template>
+          <div class="ai-analysis">
+            <div v-for="(section, index) in aiAnalysis" :key="index" class="analysis-section">
+              <h4>{{ section.title }}</h4>
+              <p>{{ section.content }}</p>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card style="margin-top: 20px;">
+          <template #header>
+            <span>历史报告</span>
+          </template>
+          <div v-for="item in historyReports" :key="item.id" class="history-item" @click="loadReport(item)">
+            <div class="history-info">
+              <h4>{{ item.hospital }}</h4>
+              <p>{{ item.date }}</p>
+            </div>
+            <el-icon><ArrowRight /></el-icon>
+          </div>
+        </el-card>
       </el-col>
     </el-row>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref } from 'vue'
+import { Download, MagicStick, ArrowRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { Download, Share } from '@element-plus/icons-vue'
-import axios from 'axios'
-import * as echarts from 'echarts'
 
-const trendChart = ref(null)
-const activeCategory = ref('all')
-const selectedReport = ref(null)
+const activeTab = ref('overview')
+const activeCategories = ref(['一般检查', '血常规'])
+const analyzing = ref(false)
+const aiAnalysis = ref(null)
 
-const reports = ref([
+const reportInfo = ref({
+  hospital: '美年大健康',
+  date: '2025-01-10',
+  reportNo: 'MN20250110001',
+  overallLevel: 'warning',
+  overallIcon: 'Warning',
+  overallText: '基本正常，有3项异常指标需关注',
+  summary: '本次体检发现血糖偏高、血脂异常、轻度脂肪肝，建议进一步检查并调整生活方式。'
+})
+
+const abnormalItems = ref([
+  { category: '血常规', item: '空腹血糖', result: '6.8 mmol/L', reference: '3.9-6.1', status: '偏高' },
+  { category: '血脂', item: '总胆固醇', result: '5.9 mmol/L', reference: '<5.2', status: '偏高' },
+  { category: '血脂', item: '甘油三酯', result: '2.1 mmol/L', reference: '<1.7', status: '偏高' },
+  { category: '肝功能', item: 'ALT', result: '48 U/L', reference: '0-40', status: '偏高' }
+])
+
+const reportDetails = ref([
   {
-    id: 1, date: '2024-01-15', type: '年度体检', status: '已解读', score: 82,
-    abnormalCount: 3, normalCount: 42, reviewCount: 1,
+    name: '一般检查',
     items: [
-      { category: '血常规', name: '白细胞计数', value: '6.5', unit: '10^9/L', referenceRange: '3.5-9.5', status: '正常', description: '正常范围' },
-      { category: '血常规', name: '红细胞计数', value: '4.8', unit: '10^12/L', referenceRange: '4.3-5.8', status: '正常', description: '正常范围' },
-      { category: '血糖', name: '空腹血糖', value: '6.8', unit: 'mmol/L', referenceRange: '3.9-6.1', status: '偏高', description: '略高于正常范围，需关注' },
-      { category: '血糖', name: '糖化血红蛋白', value: '6.2', unit: '%', referenceRange: '4.0-6.0', status: '偏高', description: '反映近3个月平均血糖水平' },
-      { category: '肝功能', name: '谷丙转氨酶', value: '35', unit: 'U/L', referenceRange: '0-40', status: '正常', description: '肝功能正常' },
-      { category: '肾功能', name: '肌酐', value: '78', unit: 'umol/L', referenceRange: '44-133', status: '正常', description: '肾功能正常' },
-      { category: '血脂', name: '总胆固醇', value: '5.8', unit: 'mmol/L', referenceRange: '2.8-5.7', status: '偏高', description: '略高于正常范围' },
-      { category: '血压', name: '收缩压', value: '128', unit: 'mmHg', referenceRange: '90-139', status: '正常', description: '正常范围' },
-      { category: '血压', name: '舒张压', value: '82', unit: 'mmHg', referenceRange: '60-89', status: '正常', description: '正常范围' },
-      { category: '尿常规', name: '尿蛋白', value: '阴性', unit: '-', referenceRange: '阴性', status: '正常', description: '正常范围' }
-    ],
-    aiAnalysis: {
-      overall: '您的整体健康状况良好，评分为82分。主要需要关注血糖和血脂指标，建议通过饮食调整和适当运动来改善。',
-      keyFindings: [
-        '空腹血糖6.8mmol/L，略高于正常范围（3.9-6.1），建议控制碳水化合物摄入',
-        '糖化血红蛋白6.2%，接近正常上限，需持续监测',
-        '总胆固醇5.8mmol/L，略高于正常范围，建议减少高脂食物摄入'
-      ],
-      recommendations: [
-        { content: '建议每3个月复查一次空腹血糖和糖化血红蛋白', urgent: true },
-        { content: '减少精制碳水化合物摄入，增加蔬菜和优质蛋白', urgent: true },
-        { content: '每周进行150分钟中等强度有氧运动', urgent: false },
-        { content: '减少高胆固醇食物摄入，如动物内脏、蛋黄等', urgent: false },
-        { content: '保持规律作息，避免熬夜', urgent: false }
-      ]
-    }
+      { item: '身高', result: '172', unit: 'cm', reference: '-', isAbnormal: false },
+      { item: '体重', result: '75', unit: 'kg', reference: '-', isAbnormal: false },
+      { item: 'BMI', result: '25.4', unit: 'kg/m²', reference: '18.5-24', isAbnormal: true },
+      { item: '收缩压', result: '128', unit: 'mmHg', reference: '<140', isAbnormal: false },
+      { item: '舒张压', result: '82', unit: 'mmHg', reference: '<90', isAbnormal: false }
+    ]
   },
   {
-    id: 2, date: '2023-07-20', type: '半年体检', status: '已解读', score: 85,
-    abnormalCount: 2, normalCount: 43, reviewCount: 0,
-    items: [], aiAnalysis: { overall: '整体状况良好', keyFindings: [], recommendations: [] }
+    name: '血常规',
+    items: [
+      { item: '白细胞', result: '6.5', unit: '10^9/L', reference: '4-10', isAbnormal: false },
+      { item: '红细胞', result: '4.8', unit: '10^12/L', reference: '4-5.5', isAbnormal: false },
+      { item: '血红蛋白', result: '145', unit: 'g/L', reference: '120-160', isAbnormal: false },
+      { item: '血小板', result: '220', unit: '10^9/L', reference: '100-300', isAbnormal: false }
+    ]
+  },
+  {
+    name: '生化检查',
+    items: [
+      { item: '空腹血糖', result: '6.8', unit: 'mmol/L', reference: '3.9-6.1', isAbnormal: true },
+      { item: '总胆固醇', result: '5.9', unit: 'mmol/L', reference: '<5.2', isAbnormal: true },
+      { item: '甘油三酯', result: '2.1', unit: 'mmol/L', reference: '<1.7', isAbnormal: true },
+      { item: 'ALT', result: '48', unit: 'U/L', reference: '0-40', isAbnormal: true }
+    ]
   }
 ])
 
-const abnormalItems = computed(() => {
-  if (!selectedReport.value) return []
-  return selectedReport.value.items.filter(item => item.status !== '正常')
-})
+const historyReports = ref([
+  { id: 1, hospital: '美年大健康', date: '2024-06-15' },
+  { id: 2, hospital: '爱康国宾', date: '2023-12-20' },
+  { id: 3, hospital: '美年大健康', date: '2023-06-10' }
+])
 
-const selectReport = (report) => {
-  selectedReport.value = report
-  if (report.items.length === 0) {
-    // 模拟加载报告详情
-    report.items = reports.value[0].items
-    report.aiAnalysis = reports.value[0].aiAnalysis
-  }
-  nextTick(() => {
-    if (activeCategory.value === 'trend') initTrendChart()
-  })
-}
-
-watch(activeCategory, (val) => {
-  if (val === 'trend') nextTick(() => initTrendChart())
-})
-
-const getStatusType = (status) => {
-  const map = { '正常': 'success', '偏高': 'warning', '偏低': 'warning', '异常': 'danger' }
-  return map[status] || 'info'
-}
-
-const initTrendChart = () => {
-  if (!trendChart.value) return
-  const chart = echarts.init(trendChart.value)
-  chart.setOption({
-    tooltip: { trigger: 'axis' },
-    legend: { data: ['空腹血糖', '总胆固醇', '收缩压'] },
-    xAxis: { type: 'category', data: ['2023-01', '2023-07', '2024-01'] },
-    yAxis: { type: 'value' },
-    series: [
-      { name: '空腹血糖', type: 'line', data: [5.8, 6.2, 6.8], smooth: true },
-      { name: '总胆固醇', type: 'line', data: [5.2, 5.5, 5.8], smooth: true },
-      { name: '收缩压', type: 'line', data: [125, 126, 128], smooth: true }
+const analyzeReport = async () => {
+  analyzing.value = true
+  try {
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    aiAnalysis.value = [
+      {
+        title: '📊 总体评价',
+        content: '您的体检结果总体尚可，但有几项指标需要引起重视。建议定期复查并调整生活习惯。'
+      },
+      {
+        title: '⚠️ 血糖偏高',
+        content: '空腹血糖6.8mmol/L超出正常范围，可能处于糖尿病前期状态。建议：1）减少精制碳水摄入；2）增加运动量；3）3个月后复查糖化血红蛋白。'
+      },
+      {
+        title: '⚠️ 血脂异常',
+        content: '总胆固醇和甘油三酯均偏高，存在心血管疾病风险。建议：1）减少高脂肪食物摄入；2）增加有氧运动；3）必要时咨询医生是否需要用药。'
+      },
+      {
+        title: '💡 生活建议',
+        content: '1）控制体重，目标BMI<24；2）每周至少150分钟中等强度运动；3）戒烟限酒；4）保持规律作息；5）3-6个月后复查。'
+      }
     ]
-  })
+    ElMessage.success('AI解读完成')
+  } catch (error) {
+    ElMessage.error('解读失败')
+  } finally {
+    analyzing.value = false
+  }
 }
 
 const exportReport = () => {
   ElMessage.success('报告导出成功')
 }
 
-const shareReport = () => {
-  ElMessage.success('分享链接已复制')
+const loadReport = (item) => {
+  ElMessage.info(`加载报告: ${item.date}`)
 }
 </script>
 
 <style scoped>
-.report-view { padding: 20px; }
-.header-card { margin-bottom: 20px; }
-.page-header h2 { margin: 0 0 8px 0; color: #303133; }
-.page-header p { margin: 0; color: #909399; font-size: 14px; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-
-.report-item {
-  padding: 12px; border-radius: 8px; cursor: pointer;
-  transition: all 0.3s; margin-bottom: 8px; border: 2px solid transparent;
+.report-view {
+  padding: 20px;
 }
-.report-item:hover { background: #f5f7fa; }
-.report-item.active { background: #ecf5ff; border-color: #409EFF; }
-.report-date { font-weight: 500; color: #303133; margin-bottom: 4px; }
-.report-type { font-size: 12px; color: #909399; margin-bottom: 4px; }
-
-.item-desc { color: #909399; font-size: 12px; }
-
-.abnormal-item {
-  padding: 16px; background: #fdf6ec; border-radius: 8px;
-  margin-bottom: 12px; border-left: 4px solid #E6A23C;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.abnormal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.item-name { font-weight: 500; color: #303133; }
-.abnormal-value { color: #606266; margin-bottom: 8px; }
-.abnormal-desc { margin-bottom: 8px; }
-.abnormal-suggestion { color: #606266; font-size: 14px; }
-
-.ai-analysis { padding: 16px; }
-.analysis-section { margin-bottom: 20px; }
-.analysis-section h4 { margin: 0 0 12px 0; color: #303133; }
-.analysis-section p { color: #606266; line-height: 1.8; margin: 0; }
-.analysis-section ul { margin: 0; padding-left: 20px; }
-.analysis-section li { color: #606266; margin-bottom: 8px; line-height: 1.6; }
+.report-header {
+  text-align: center;
+}
+.report-header h3 {
+  margin: 0 0 5px 0;
+}
+.report-header p {
+  color: #666;
+}
+.overall-result {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+.result-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.result-icon.warning { background: #fdf6ec; color: #E6A23C; }
+.result-icon.success { background: #f0f9eb; color: #67C23A; }
+.result-icon.danger { background: #fef0f0; color: #F56C6C; }
+.result-text h3 {
+  margin: 0 0 8px 0;
+}
+.result-text p {
+  margin: 0;
+  color: #666;
+}
+.abnormal-value {
+  color: #F56C6C;
+  font-weight: bold;
+}
+.abnormal {
+  color: #F56C6C;
+  font-weight: bold;
+}
+.ai-analysis {
+  max-height: 600px;
+  overflow-y: auto;
+}
+.analysis-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+.analysis-section h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+}
+.analysis-section p {
+  margin: 0;
+  color: #666;
+  line-height: 1.6;
+}
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.history-item:hover {
+  background: #f5f7fa;
+}
+.history-info h4 {
+  margin: 0 0 5px 0;
+}
+.history-info p {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+}
 </style>

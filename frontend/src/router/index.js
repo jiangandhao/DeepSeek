@@ -64,12 +64,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/health-manager/disease',
-    name: 'DiseaseManagement',
-    component: () => import('../views/healthManager/DiseaseManagement.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/checkup',
     name: 'Checkup',
     component: () => import('../views/checkup/Appointment.vue'),
