@@ -12,17 +12,17 @@
 
 | 任务 | 状态 | 产出物 |
 |------|------|--------|
-| 项目立项报告 | ✅ 已完成 | `PROJECT_START_REPORT.md`、`Project Start Report_V1.0.docx` |
-| 项目规划 | ✅ 已完成 | `SOFTWARE_PROJECT_PLANNING.md`、`Software Project Planning_V1.0.docx` |
-| 系统架构设计 | ✅ 已完成 | `SYSTEM_ARCHITECTURE.md` |
-| 需求调研报告 | ✅ 已完成 | `HEALTH_MANAGEMENT_RESEARCH.md` |
+| 项目立项报告 | ✅ 已完成 | `docs/project-start-report.md`、`docs/word/project-start-report-v1.0.docx` |
+| 项目规划 | ✅ 已完成 | `docs/software-project-planning.md`、`docs/word/software-project-planning-v1.0.docx` |
+| 系统架构设计 | ✅ 已完成 | `docs/system-architecture.md` |
+| 需求调研报告 | ✅ 已完成 | `docs/health-management-research.md` |
 
 ### 6月3日任务：需求分析与PRD生成
 
 | 任务 | 状态 | 产出物 |
 |------|------|--------|
-| 软件需求规格说明书 | ✅ 已完成 | `HEALTH_MANAGEMENT_SRS.md`、`Software Requirement Specification_V1.0.docx` |
-| PRD生成（按01.2流程） | ✅ 已完成 | `docs/prds/health-management-system-v1.0-prd.md` |
+| 软件需求规格说明书 | ✅ 已完成 | `docs/health-management-system-srs.md`、`docs/word/software-requirement-specification-v1.0.docx` |
+| PRD生成（按01.2流程） | ✅ 已完成 | `docs/health-management-system-v1.0-prd.md` |
 | 需求澄清 | ✅ 已完成 | 应用requirements-clarity技能，识别并澄清5个模糊点 |
 | UML图示 | ✅ 已完成 | 用例图 + 4个活动图（PlantUML + PNG） |
 | UML嵌入SRS | ✅ 已完成 | 5张UML图片已嵌入Word版SRS文档 |
@@ -37,6 +37,7 @@
 | 重新生成Software Project Planning | ✅ 已完成 | 严格按模板：封面/修订记录/目录/简介/交付件/WBS/甘特图 |
 | 重新生成SRS | ✅ 已完成 | 严格按模板：封面/修订记录/关键词/摘要/缩略语/简介/总体概述/具体需求/性能/接口/约束/质量/分级/附录 |
 | Git推送 | ✅ 已完成 | commit `c657ac3`，已推送到远程仓库 |
+| 文件结构整理 | ✅ 已完成 | 根目录仅保留入口文件与配置，主要文档归档至 `docs/`，Word 与 UML 使用独立子目录 |
 
 ---
 
@@ -91,20 +92,20 @@
 
 | 文件 | 说明 |
 |------|------|
-| `PROJECT_START_REPORT.md` | 项目立项报告（Markdown版） |
-| `小组序号_项目名称_Project Start Report_V1.0.docx` | 项目立项报告（Word版，按模板） |
-| `SOFTWARE_PROJECT_PLANNING.md` | 项目规划（Markdown版） |
-| `小组序号_项目名称_Software Project Planning(simple)_V1.0.docx` | 项目规划（Word版，按模板） |
-| `HEALTH_MANAGEMENT_RESEARCH.md` | 需求调研报告 |
-| `HEALTH_MANAGEMENT_SRS.md` | 软件需求规格说明书（Markdown版） |
-| `小组序号_项目名称__Software Requirement Specification_V1.0.docx` | 需求规格说明书（Word版，按模板，含UML图片） |
-| `SYSTEM_ARCHITECTURE.md` | 系统架构设计文档 |
+| `docs/project-start-report.md` | 项目立项报告（Markdown版） |
+| `docs/word/project-start-report-v1.0.docx` | 项目立项报告（Word版，按模板） |
+| `docs/software-project-planning.md` | 项目规划（Markdown版） |
+| `docs/word/software-project-planning-v1.0.docx` | 项目规划（Word版，按模板） |
+| `docs/health-management-research.md` | 需求调研报告 |
+| `docs/health-management-system-srs.md` | 软件需求规格说明书（Markdown版） |
+| `docs/word/software-requirement-specification-v1.0.docx` | 需求规格说明书（Word版，按模板，含UML图片） |
+| `docs/system-architecture.md` | 系统架构设计文档 |
 
 ### PRD与UML
 
 | 文件 | 说明 |
 |------|------|
-| `docs/prds/health-management-system-v1.0-prd.md` | 产品需求文档（PRD） |
+| `docs/health-management-system-v1.0-prd.md` | 产品需求文档（PRD） |
 | `docs/uml/*.puml` + `*.png` | 5个PlantUML源文件 + 5张PNG图片 |
 
 ---
