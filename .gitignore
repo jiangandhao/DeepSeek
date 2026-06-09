@@ -41,3 +41,7 @@ ai-service/data/*.csv
 !ai-service/data/.gitkeep
 ai-service/**/*.pt
 ai-service/**/*.pkl
+
+
+基于图像特征识别的宠物领养平台需求调研报告.md
+实训个人周报--姜昊-2301.doc
