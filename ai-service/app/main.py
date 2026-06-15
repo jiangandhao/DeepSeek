@@ -20,6 +20,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 内部鉴权:校验后端传来的共享密钥。健康检查与接口文档放行。
+_AUTH_EXEMPT_PREFIXES = ("/health", "/docs", "/redoc", "/openapi.json")
+
+
+@app.middleware("http")
+async def internal_auth(request: Request, call_next):
+    key = settings.internal_api_key
+    if key:  # 未配置密钥则不强制(本地开发 / 单测)
+        path = request.url.path
+        exempt = path == "/" or path.startswith(_AUTH_EXEMPT_PREFIXES)
+        if not exempt and request.headers.get("X-Internal-Key") != key:
+            return JSONResponse(status_code=401,
+                                content={"detail": "缺少或错误的内部鉴权密钥(X-Internal-Key)"})
+    return await call_next(request)
+
 
 @app.exception_handler(httpx.HTTPStatusError)
 async def deepseek_http_error(request: Request, exc: httpx.HTTPStatusError):

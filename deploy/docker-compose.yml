@@ -12,7 +12,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -28,7 +28,7 @@ services:
     container_name: health-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     # REDIS_PASSWORD 为空时等同于不设密码,与后端配置保持一致
@@ -49,8 +49,11 @@ services:
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL}
       DEEPSEEK_MODEL: ${DEEPSEEK_MODEL}
-    ports:
-      - "8000:8000"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+    # 不对宿主暴露 8000:仅容器内网(后端通过服务名 ai-service:8000 访问)。
+    # 如需本地看 /docs,临时打开下面端口映射,或 docker compose exec ai-service ...
+    # ports:
+    #   - "8000:8000"
     volumes:
       - chroma_data:/app/chroma_db
 
@@ -74,7 +77,10 @@ services:
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES}
+      CRYPTO_SECRET: ${CRYPTO_SECRET}
       AI_SERVICE_URL: ${AI_SERVICE_URL}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
     ports:
       - "8080:8080"
 

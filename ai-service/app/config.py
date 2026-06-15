@@ -14,5 +14,9 @@ class Settings(BaseSettings):
     # 服务
     app_name: str = "health-ai-service"
 
+    # 内部共享密钥:后端调用 AI 服务时须带 X-Internal-Key 头。
+    # 为空时不强制校验(便于本地开发 / 单测);生产由 INTERNAL_API_KEY 注入。
+    internal_api_key: str = ""
+
 
 settings = Settings()

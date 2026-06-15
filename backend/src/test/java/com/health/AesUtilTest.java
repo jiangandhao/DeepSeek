@@ -25,9 +25,13 @@ class AesUtilTest {
     }
 
     @Test
-    void encryptIsDeterministic() {
-        // ECB 确定性:相同明文 -> 相同密文(便于等值检索)
-        assertEquals(AesUtil.encrypt("hello"), AesUtil.encrypt("hello"));
+    void encryptIsNonDeterministic() {
+        // GCM 随机 IV:相同明文 -> 每次密文不同,但都能解回原文
+        String c1 = AesUtil.encrypt("hello");
+        String c2 = AesUtil.encrypt("hello");
+        assertNotEquals(c1, c2, "随机 IV 应使两次密文不同");
+        assertEquals("hello", AesUtil.decrypt(c1));
+        assertEquals("hello", AesUtil.decrypt(c2));
     }
 
     @Test
