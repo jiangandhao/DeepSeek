@@ -14,6 +14,8 @@ pandas==2.2.3
 # 阶段4 影像识别(轻量演示:Pillow + numpy;可升级为 torch/MONAI 真实模型)
 pillow==11.0.0
 python-multipart==0.0.20
+pytesseract==0.3.13
+pypdf==5.1.0
 
 # 阶段3 RAG(按需安装,体积较大,首期可注释)
 # chromadb==0.5.23

@@ -166,4 +166,22 @@ CREATE TABLE IF NOT EXISTS `appointment` (
   KEY `idx_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='体检预约';
 
+-- ----------------------------
+-- 体检报告归档与结构化分析
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `health_report` (
+  `id`                BIGINT       NOT NULL AUTO_INCREMENT,
+  `user_id`           BIGINT       NOT NULL,
+  `filename`          VARCHAR(255) NOT NULL,
+  `report_type`       VARCHAR(32)  NOT NULL COMMENT 'LAB_REPORT/GENERAL_EXAM_REPORT/MEDICAL_IMAGE',
+  `extraction_method` VARCHAR(32)  NOT NULL COMMENT 'IMAGE_OCR/PDF_TEXT/IMAGE_ANALYSIS',
+  `risk_level`        VARCHAR(16)  NOT NULL DEFAULT 'LOW',
+  `summary`           TEXT         NOT NULL,
+  `abnormal_count`    INT          NOT NULL DEFAULT 0,
+  `structured_json`   LONGTEXT     NOT NULL COMMENT '指标、知识证据、影像候选等完整结果',
+  `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_report_user_time` (`user_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='体检报告';
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -6,6 +6,8 @@
 """
 from typing import AsyncIterator
 
+import httpx
+
 from app.agents.glucose_agent import _summarize
 from app.deepseek.client import deepseek_client
 from app.rag.retriever import retriever
@@ -54,8 +56,46 @@ def _build_messages(req: AdviceRequest) -> tuple[list[dict], str, dict]:
 
 async def generate_health_plan(req: AdviceRequest) -> dict:
     messages, context, risk = _build_messages(req)
-    content = await deepseek_client.chat_content(messages)
-    return {"content": content, "context": context, "risk": risk}
+    try:
+        content = await deepseek_client.chat_content(messages)
+        return {"content": content, "context": "deepseek\n" + context, "risk": risk,
+                "provider": "deepseek"}
+    except httpx.HTTPError:
+        content = _fallback_adjustment(req, risk)
+        return {"content": content, "context": "local-rag-fallback\n" + context,
+                "risk": risk, "provider": "local-rag-fallback"}
+
+
+def _fallback_adjustment(req: AdviceRequest, risk: dict) -> str:
+    """外部模型不可用时，依据本地向量知识与安全规则提供可执行建议。"""
+    question = req.question or "生成综合健康管理方案"
+    evidence = retriever.retrieve(question + " 饮食 运动 血糖", k=3)
+    sources = "、".join(f"{item['source']}/{item['title']}" for item in evidence) or "内置健康管理规则"
+    if any(word in question for word in ("聚餐", "外卖", "宴请")):
+        action = (
+            "1. **聚餐前**：不要空腹赴宴，可提前吃 100–150g 无淀粉蔬菜或一杯无糖酸奶。\n"
+            "2. **进餐时**：按蔬菜→蛋白质→主食顺序；主食控制在熟重 80–100g，含糖饮料和酒尽量不选。\n"
+            "3. **菜品选择**：优先清蒸、炖、白灼；油炸或浓汁菜控制在平时一半分量。\n"
+            "4. **餐后活动**：无运动禁忌时，餐后 20–30 分钟开始快走 20–30 分钟。"
+        )
+    elif any(word in question for word in ("替换", "换成", "不吃", "过敏")):
+        action = (
+            "1. 保持同类交换：主食换主食、优质蛋白换优质蛋白，避免只删除不补足。\n"
+            "2. 每份主食替换目标约 25–30g 碳水；鱼肉 100g 可换北豆腐约 150g 或鸡胸肉 90–100g。\n"
+            "3. 替换后继续保留至少 200g 非淀粉类蔬菜，并观察餐后血糖反馈。"
+        )
+    else:
+        action = (
+            "1. 每餐保证蔬菜、优质蛋白和定量主食，减少含糖饮料及精制点心。\n"
+            "2. 无禁忌时每周累计至少 150 分钟中等强度有氧活动，并安排 2 次抗阻训练。\n"
+            "3. 连续记录 3 天执行情况与餐后血糖，再根据趋势调整主食 10–15g。"
+        )
+    return (
+        "## 本次调整建议\n" + action + "\n\n"
+        f"## 风险与监测\n当前规则风险等级为 **{risk['level']}**。如出现低血糖、胸痛、明显呼吸困难或其他急性不适，应停止运动并及时就医。\n\n"
+        f"## 参考依据\n本次降级建议检索自：{sources}。DeepSeek 暂不可用时系统已自动切换本地知识库。\n\n"
+        "> 本建议仅供健康管理参考，不替代执业医师或营养师意见。"
+    )
 
 
 async def stream_health_plan(req: AdviceRequest) -> AsyncIterator[str]:

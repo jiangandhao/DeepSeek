@@ -2,6 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# 通用体检报告 OCR（中英文）与 PDF 文本解析
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr tesseract-ocr-chi-sim \
+    && rm -rf /var/lib/apt/lists/*
+
 # 国内构建可按需替换 pip 源
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

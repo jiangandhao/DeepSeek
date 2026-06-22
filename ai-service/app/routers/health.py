@@ -6,6 +6,7 @@ import httpx
 from app.agents.health_manager import generate_health_plan, stream_health_plan
 from app.risk.scorer import score_risk
 from app.schemas import AdviceRequest, RiskRequest, RiskResponse
+from app.plans.generator import generate_structured_plan
 
 router = APIRouter(tags=["health-manager"])
 
@@ -20,6 +21,12 @@ async def assess_risk(req: RiskRequest):
 async def health_plan(req: AdviceRequest):
     """AI 数智健管师:风险解读 + 个性化处方(LLM + RAG)。"""
     return await generate_health_plan(req)
+
+
+@router.post("/api/health/plan/structured")
+async def structured_health_plan(req: AdviceRequest):
+    """生成结构化饮食、营养目标与七日运动计划，无需调用外部大模型。"""
+    return generate_structured_plan(req)
 
 
 @router.post("/api/health/plan/stream")

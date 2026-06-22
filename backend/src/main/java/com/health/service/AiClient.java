@@ -59,6 +59,16 @@ public class AiClient {
     }
 
     @SuppressWarnings("unchecked")
+    public Map<String, Object> structuredHealthPlan(Map<String, Object> body) {
+        return aiWebClient.post()
+                .uri("/api/health/plan/structured")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
+    }
+
+    @SuppressWarnings("unchecked")
     public Map<String, Object> predict(Map<String, Object> body) {
         return aiWebClient.post()
                 .uri("/api/analysis/predict")
@@ -79,6 +89,24 @@ public class AiClient {
         });
         return aiWebClient.post()
                 .uri("/api/imaging/detect")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(BodyInserters.fromMultipartData(builder.build()))
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> analyzeReport(byte[] bytes, String filename, String contentType) {
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("file", new ByteArrayResource(bytes) {
+            @Override
+            public String getFilename() {
+                return filename != null ? filename : "report.png";
+            }
+        }).contentType(contentType != null ? MediaType.parseMediaType(contentType) : MediaType.APPLICATION_OCTET_STREAM);
+        return aiWebClient.post()
+                .uri("/api/reports/analyze")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromMultipartData(builder.build()))
                 .retrieve()

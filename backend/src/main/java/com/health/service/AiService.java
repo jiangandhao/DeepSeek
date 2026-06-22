@@ -8,6 +8,10 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.health.common.BizException;
+
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.health.entity.AiAdvice;
 import com.health.entity.Alert;
@@ -37,6 +41,7 @@ public class AiService {
     private final AiAdviceMapper aiAdviceMapper;
     private final AlertMapper alertMapper;
     private final AiClient aiClient;
+    private final ObjectMapper objectMapper;
 
     private List<Map<String, Object>> glucosePoints(List<GlucoseRecord> records) {
         List<Map<String, Object>> list = new ArrayList<>();
@@ -154,6 +159,37 @@ public class AiService {
         advice.setContext(result != null ? String.valueOf(result.get("context")) : null);
         aiAdviceMapper.insert(advice);
         return advice;
+    }
+
+    /** 返回可直接渲染的饮食、营养目标与七日运动计划。 */
+    public Map<String, Object> structuredHealthPlan(Long userId) {
+        Map<String, Object> body = buildAdviceBody(userId, null, false);
+        return aiClient.structuredHealthPlan(body);
+    }
+
+    /** 用户确认后显式保存当前结构化方案。 */
+    public AiAdvice saveStructuredPlan(Long userId, Map<String, Object> plan) {
+        if (plan == null || !plan.containsKey("meals") || !plan.containsKey("exercise_week")) {
+            throw new BizException("方案内容不完整，请重新生成");
+        }
+        AiAdvice advice = new AiAdvice();
+        advice.setUserId(userId);
+        advice.setType("SAVED_PLAN");
+        try {
+            advice.setContent(objectMapper.writeValueAsString(plan));
+        } catch (JsonProcessingException e) {
+            throw new BizException("结构化健康方案保存失败");
+        }
+        advice.setContext("用户确认保存的饮食与运动综合方案");
+        aiAdviceMapper.insert(advice);
+        return advice;
+    }
+
+    public List<AiAdvice> planHistory(Long userId) {
+        return aiAdviceMapper.selectList(Wrappers.<AiAdvice>lambdaQuery()
+                .eq(AiAdvice::getUserId, userId)
+                .eq(AiAdvice::getType, "SAVED_PLAN")
+                .orderByDesc(AiAdvice::getCreatedAt));
     }
 
     public List<Alert> alerts(Long userId) {

@@ -43,6 +43,24 @@ public class RiskController {
         return Result.ok(aiService.healthPlan(UserContext.currentUserId(), q));
     }
 
+    @Operation(summary = "结构化饮食方案、营养目标与七日运动计划")
+    @PostMapping("/structured-plan")
+    public Result<Map<String, Object>> structuredPlan() {
+        return Result.ok(aiService.structuredHealthPlan(UserContext.currentUserId()));
+    }
+
+    @Operation(summary = "保存用户确认的结构化综合方案")
+    @PostMapping("/plans")
+    public Result<AiAdvice> savePlan(@RequestBody Map<String, Object> plan) {
+        return Result.ok(aiService.saveStructuredPlan(UserContext.currentUserId(), plan));
+    }
+
+    @Operation(summary = "已保存的综合方案历史")
+    @GetMapping("/plans")
+    public Result<List<AiAdvice>> planHistory() {
+        return Result.ok(aiService.planHistory(UserContext.currentUserId()));
+    }
+
     @Operation(summary = "预警列表")
     @GetMapping("/alerts")
     public Result<List<Alert>> alerts() {

@@ -9,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import agent, analysis, chat, health, imaging
+from app.routers import agent, analysis, chat, health, imaging, reports
+from app.rag.retriever import retriever
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
@@ -39,11 +40,12 @@ app.include_router(analysis.router)
 app.include_router(agent.router)
 app.include_router(health.router)
 app.include_router(imaging.router)
+app.include_router(reports.router)
 
 
 @app.get("/health", tags=["meta"])
 async def health():
-    return {"status": "ok", "service": settings.app_name}
+    return {"status": "ok", "service": settings.app_name, "vector_db": retriever.status()}
 
 
 @app.get("/", tags=["meta"])

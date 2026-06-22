@@ -30,6 +30,9 @@ export const getProfile = () => request.get('/api/profile')
 export const saveProfile = (data) => request.put('/api/profile', data)
 export const assessRisk = () => request.post('/api/risk/assess')
 export const healthPlan = (data) => request.post('/api/risk/health-plan', data)
+export const structuredHealthPlan = () => request.post('/api/risk/structured-plan')
+export const saveStructuredPlan = (data) => request.post('/api/risk/plans', data)
+export const listSavedPlans = () => request.get('/api/risk/plans')
 export const listAlerts = () => request.get('/api/risk/alerts')
 export const readAlert = (id) => request.put(`/api/risk/alerts/${id}/read`)
 
@@ -49,6 +52,16 @@ export const detectImage = (file) => {
   form.append('file', file)
   return request.post('/api/imaging/detect', form, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
+
+// ---- 通用体检报告 ----
+export const analyzeHealthReport = (file) => {
+  const form = new FormData()
+  form.append('file', file)
+  return request.post('/api/reports/analyze', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+}
+export const listHealthReports = () => request.get('/api/reports')
+export const getHealthReport = (id) => request.get(`/api/reports/${id}`)
+export const deleteHealthReport = (id) => request.delete(`/api/reports/${id}`)
 
 /**
  * 流式对话:基于 fetch 读取 SSE。onChunk(text) 持续回调增量,完成时 resolve。

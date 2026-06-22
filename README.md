@@ -24,7 +24,7 @@ Vue3 前端  ──REST/SSE──▶  Spring Boot 后端  ──REST──▶  P
 
 - **前端**:Vue 3、Vite、Element Plus、Pinia、Vue Router、Axios、ECharts
 - **后端**:Java 17、Spring Boot 3、Spring Security(JWT)、MyBatis-Plus、Redis
-- **AI 服务**:Python 3.12、FastAPI、httpx、ChromaDB、sentence-transformers
+- **AI 服务**:Python 3.12、FastAPI、httpx、Tesseract OCR、持久化 SQLite 向量库
 - **数据库**:MySQL 8、Redis、Chroma(向量库)
 - **大模型**:DeepSeek 官方 API(deepseek-chat)
 
@@ -107,6 +107,7 @@ cd backend && mvn test                     # 后端单测(7 passed,AesUtil/ExamS
 | 血糖概览 | 趋势图(正常区间/异常点标注)+ 统计卡片 |
 | AI 智能体 | 血糖管理智能体(RAG+DeepSeek)流式对话 + 预测/预警面板 |
 | 数智健管师 | 健康档案 + 疾病风险评分(可解释)+ AI 个性化处方 + 预警记录 |
-| 智能体检 | 按「距离+繁忙度」智能推荐体检中心 + 预约管理 |
-| 影像识别 | 上传 CT 切片 → 肺结节候选检测 + 框选可视化 + 报告 |
+| 智能体检 | 套餐与机构推荐、预约管理、报告历史归档 |
+| 报告分析 | 体检单/化验单图片与 PDF OCR、指标异常识别、向量知识检索、医学图片辅助分析 |
+| 个性方案 | 个体营养目标、4 餐食谱与替换项、七日运动处方、监测建议 |
 | 血糖/饮食/运动 | 数据录入与管理 |

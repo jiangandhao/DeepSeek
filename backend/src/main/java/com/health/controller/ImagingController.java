@@ -18,7 +18,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
-@Tag(name = "影像识别")
+@Tag(name = "医学影像识别（兼容接口）")
 @RestController
 @RequestMapping("/api/imaging")
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class ImagingController {
 
     private final AiClient aiClient;
 
-    @Operation(summary = "肺结节检测(上传 CT 切片图像)")
+    @Operation(summary = "肺 CT 结节候选检测；其他体检报告请使用 /api/reports/analyze")
     @PostMapping("/detect")
     public Result<Map<String, Object>> detect(@RequestParam("file") MultipartFile file) {
         UserContext.currentUserId(); // 鉴权

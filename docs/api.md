@@ -66,6 +66,9 @@
 | PUT | `/api/profile` | 保存/更新档案 `{heightCm, weightKg, familyHistory, chronic, diabetesType}` |
 | POST | `/api/risk/assess` | 疾病风险评估(中/高风险自动落库预警),返回 `{level, score, factors, metrics}` |
 | POST | `/api/risk/health-plan` | AI 数智健管师:风险解读 + 个性化处方 |
+| POST | `/api/risk/structured-plan` | 结构化方案，返回营养目标、4 餐食谱、替换项、七日运动和监测建议 |
+| POST | `/api/risk/plans` | 显式保存用户确认后的结构化综合方案 |
+| GET | `/api/risk/plans` | 已保存方案的历史版本 |
 | GET | `/api/risk/alerts` | 预警列表 |
 | PUT | `/api/risk/alerts/{id}/read` | 标记预警已读 |
 
@@ -78,11 +81,15 @@
 | GET | `/api/exam/appointments` | 我的预约 |
 | DELETE | `/api/exam/appointments/{id}` | 取消预约 |
 
-## 8. 影像识别(阶段4)
+## 8. 体检报告与影像分析
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/imaging/detect` | 上传 CT 切片(multipart `file`),返回结节候选框 + 标注图(base64)+ 报告 |
+| POST | `/api/reports/analyze` | 上传体检报告图片/PDF或医学影像，OCR/文本解析、指标结构化、知识检索并归档 |
+| GET | `/api/reports` | 当前用户报告历史摘要 |
+| GET | `/api/reports/{id}` | 报告完整结构化详情 |
+| DELETE | `/api/reports/{id}` | 删除本人报告 |
+| POST | `/api/imaging/detect` | 兼容接口：上传肺 CT 切片，返回候选区域和标注图 |
 
 ## 9. 账户 / 隐私脱敏(阶段5)
 
@@ -103,7 +110,11 @@
 | GET | `/api/agent/retrieve?q=&k=3` | RAG 检索调试(论文展示召回) |
 | POST | `/api/risk/assess` | 疾病风险评分(规则模型) |
 | POST | `/api/health/plan` / `/plan/stream` | 数智健管师方案 |
+| POST | `/api/health/plan/structured` | 结构化饮食与七日运动方案（本地约束引擎 + 向量知识） |
+| POST | `/api/reports/analyze` | 通用报告 OCR/PDF/医学图片分析 |
 | POST | `/api/imaging/detect` | 肺结节检测(multipart) |
+
+`GET /health` 会返回向量库引擎、维度和知识文档数。当前采用持久化 SQLite 哈希向量库，数据保存在 Docker `chroma_data` 卷中。
 
 > 注意:AI 服务中血糖点字段为 **snake_case**(`value_mmol`/`measured_at`);后端 `AiService` 已做字段映射。
 

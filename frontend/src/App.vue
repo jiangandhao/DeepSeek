@@ -5,9 +5,5 @@
 <script setup></script>
 
 <style>
-html, body, #app {
-  height: 100%;
-  margin: 0;
-  font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
-}
+@import './styles/theme.css';
 </style>
