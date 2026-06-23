@@ -1,4 +1,4 @@
-"""DeepSeek API 客户端封装。
+"""Mimo API 客户端封装。
 
 兼容 OpenAI 的 /chat/completions 协议。支持普通调用与 SSE 流式输出。
 """
@@ -10,12 +10,12 @@ import httpx
 from app.config import settings
 
 
-class DeepSeekClient:
+class MimoClient:
     def __init__(self) -> None:
-        self.base_url = settings.deepseek_base_url.rstrip("/")
-        self.api_key = settings.deepseek_api_key
-        self.model = settings.deepseek_model
-        self.timeout = settings.deepseek_timeout
+        self.base_url = settings.llm_base_url.rstrip("/")
+        self.api_key = settings.llm_api_key
+        self.model = settings.llm_model
+        self.timeout = settings.llm_timeout
 
     @property
     def _headers(self) -> dict:
@@ -23,6 +23,17 @@ class DeepSeekClient:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+
+
+    @staticmethod
+    def _raise_for_status(resp: httpx.Response) -> None:
+        if resp.is_error:
+            detail = resp.text.strip()
+            raise httpx.HTTPStatusError(
+                f"Mimo API returned {resp.status_code}: {detail}",
+                request=resp.request,
+                response=resp,
+            )
 
     async def chat(
         self,
@@ -45,7 +56,7 @@ class DeepSeekClient:
                 headers=self._headers,
                 json=payload,
             )
-            resp.raise_for_status()
+            self._raise_for_status(resp)
             data = resp.json()
             return data["choices"][0]["message"]
 
@@ -73,7 +84,7 @@ class DeepSeekClient:
                 headers=self._headers,
                 json=payload,
             ) as resp:
-                resp.raise_for_status()
+                self._raise_for_status(resp)
                 async for line in resp.aiter_lines():
                     if not line or not line.startswith("data:"):
                         continue
@@ -90,4 +101,7 @@ class DeepSeekClient:
                         continue
 
 
-deepseek_client = DeepSeekClient()
+mimo_client = MimoClient()
+
+# Backward-compatible alias used by existing routers and agents.
+deepseek_client = mimo_client

@@ -3,7 +3,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
-# ---- DeepSeek 通用对话 ----
+# ---- Mimo 通用对话 ----
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
     content: str

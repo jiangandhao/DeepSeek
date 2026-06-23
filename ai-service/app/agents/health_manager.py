@@ -58,8 +58,8 @@ async def generate_health_plan(req: AdviceRequest) -> dict:
     messages, context, risk = _build_messages(req)
     try:
         content = await deepseek_client.chat_content(messages)
-        return {"content": content, "context": "deepseek\n" + context, "risk": risk,
-                "provider": "deepseek"}
+        return {"content": content, "context": "mimo\n" + context, "risk": risk,
+                "provider": "mimo"}
     except httpx.HTTPError:
         content = _fallback_adjustment(req, risk)
         return {"content": content, "context": "local-rag-fallback\n" + context,
@@ -93,7 +93,7 @@ def _fallback_adjustment(req: AdviceRequest, risk: dict) -> str:
     return (
         "## 本次调整建议\n" + action + "\n\n"
         f"## 风险与监测\n当前规则风险等级为 **{risk['level']}**。如出现低血糖、胸痛、明显呼吸困难或其他急性不适，应停止运动并及时就医。\n\n"
-        f"## 参考依据\n本次降级建议检索自：{sources}。DeepSeek 暂不可用时系统已自动切换本地知识库。\n\n"
+        f"## 参考依据\n本次降级建议检索自：{sources}。Mimo 暂不可用时系统已自动切换本地知识库。\n\n"
         "> 本建议仅供健康管理参考，不替代执业医师或营养师意见。"
     )
 

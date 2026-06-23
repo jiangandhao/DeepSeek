@@ -1,6 +1,6 @@
 """血糖管理智能体编排。
 
-流程:汇总用户数据 -> RAG 检索相关医学知识 -> 组装结构化 Prompt -> 调用 DeepSeek。
+流程:汇总用户数据 -> RAG 检索相关医学知识 -> 组装结构化 Prompt -> 调用 Mimo。
 支持非流式与 SSE 流式输出。
 """
 from typing import AsyncIterator

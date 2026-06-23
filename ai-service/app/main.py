@@ -1,6 +1,6 @@
 """AI 服务入口 (FastAPI)。
 
-提供:健康检查、通用 DeepSeek 对话。
+提供:健康检查、通用 Mimo 对话。
 后续阶段挂载:血糖预测、异常检测、血糖管理智能体、影像推理。
 """
 import httpx
@@ -25,15 +25,15 @@ app.add_middleware(
 @app.exception_handler(httpx.HTTPStatusError)
 async def deepseek_http_error(request: Request, exc: httpx.HTTPStatusError):
     code = exc.response.status_code
-    hint = "请检查 DEEPSEEK_API_KEY 是否正确" if code in (401, 403) else "请稍后重试或检查网络/额度"
+    hint = "请检查 MIMO_API_KEY 是否正确" if code in (401, 403) else "请稍后重试或检查网络/额度"
     return JSONResponse(status_code=502,
-                        content={"detail": f"DeepSeek API 调用失败({code}),{hint}"})
+                        content={"detail": f"Mimo API 调用失败({code}),{hint}"})
 
 
 @app.exception_handler(httpx.HTTPError)
 async def deepseek_conn_error(request: Request, exc: httpx.HTTPError):
     return JSONResponse(status_code=502,
-                        content={"detail": f"无法连接 DeepSeek API:{exc}"})
+                        content={"detail": f"无法连接 Mimo API:{exc}"})
 
 app.include_router(chat.router)
 app.include_router(analysis.router)

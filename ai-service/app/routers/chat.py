@@ -1,4 +1,4 @@
-"""通用对话路由:验证 DeepSeek 连通性,后续供智能体复用。"""
+"""通用对话路由:验证 Mimo 连通性,后续供智能体复用。"""
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 import httpx
