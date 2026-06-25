@@ -76,6 +76,12 @@ class AdviceResponse(BaseModel):
     context: str
 
 
+# ---- 结构化洞察智能体 ----
+class InsightRequest(AdviceRequest):
+    """在 AdviceRequest 基础上增加分析侧重点。"""
+    aspect: Optional[str] = Field(None, description="glucose/risk/diet/exercise/comprehensive,为空走自由问题")
+
+
 # ---- 疾病风险评估(阶段4) ----
 class RiskRequest(BaseModel):
     profile: dict = Field(default_factory=dict)

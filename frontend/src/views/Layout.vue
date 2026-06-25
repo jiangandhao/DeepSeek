@@ -60,6 +60,7 @@ const baseNavItems = [
   { path: '/dashboard', title: '首页', caption: '健康概览', icon: House },
   { path: '/monitoring', title: '监测', caption: '趋势与预警', icon: TrendCharts },
   { path: '/plan', title: '方案', caption: '今日行动', icon: Calendar },
+  { path: '/assistant', title: '智能体', caption: 'AI 健康助手', icon: ChatDotRound },
   { path: '/devices', title: '设备', caption: '绑定与上报', icon: Watch },
   { path: '/exam', title: '体检', caption: '预约与报告', icon: Document },
   { path: '/profile', title: '我的', caption: '健康档案', icon: User }

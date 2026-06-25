@@ -43,6 +43,22 @@ public class AiController {
         return Result.ok(aiService.adviceHistory(UserContext.currentUserId()));
     }
 
+    @Operation(summary = "结构化洞察(返回可视化卡片 JSON)")
+    @PostMapping("/insight")
+    public Result<Map<String, Object>> insight(@RequestBody(required = false) AiQuestionRequest req) {
+        String aspect = req != null ? req.getAspect() : null;
+        String question = req != null ? req.getQuestion() : null;
+        return Result.ok(aiService.insight(UserContext.currentUserId(), aspect, question));
+    }
+
+    @Operation(summary = "流式洞察(SSE,逐字输出 Markdown)")
+    @PostMapping(value = "/insight/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> insightStream(@RequestBody(required = false) AiQuestionRequest req) {
+        String aspect = req != null ? req.getAspect() : null;
+        String question = req != null ? req.getQuestion() : null;
+        return aiService.streamInsight(UserContext.currentUserId(), aspect, question);
+    }
+
     @Operation(summary = "流式对话(SSE)")
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatStream(@RequestBody(required = false) AiQuestionRequest req) {

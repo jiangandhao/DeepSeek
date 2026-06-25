@@ -24,6 +24,7 @@ export const aiAdvice = (data) => request.post('/api/ai/advice', data)
 export const aiHistory = () => request.get('/api/ai/advice')
 export const aiPredict = (horizon = 6) => request.post(`/api/ai/predict?horizon=${horizon}`)
 export const aiAnomaly = () => request.get('/api/ai/anomaly')
+export const aiInsight = ({ aspect, question } = {}) => request.post('/api/ai/insight', { aspect, question })
 
 // ---- 健康档案 / 风险预警 / 数智健管师 ----
 export const getProfile = () => request.get('/api/profile')
@@ -119,6 +120,49 @@ export async function aiChatStream(question, onChunk) {
       if (payload === '[DONE]') return
       if (payload.startsWith('[ERROR]')) throw new Error(payload)
       onChunk(payload)
+    }
+  }
+}
+
+function b64ToUtf8(b64) {
+  const bin = atob(b64)
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0))
+  return new TextDecoder('utf-8').decode(bytes)
+}
+
+/**
+ * 流式结构化洞察:逐字回调 Markdown 增量。正文为 base64(穿越双层 SSE 不丢换行)。
+ */
+export async function aiInsightStream({ aspect, question } = {}, onChunk) {
+  const token = localStorage.getItem('token')
+  const resp = await fetch('/api/ai/insight/stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: token ? `Bearer ${token}` : ''
+    },
+    body: JSON.stringify({ aspect, question })
+  })
+  if (!resp.ok || !resp.body) {
+    throw new Error('流式请求失败: ' + resp.status)
+  }
+  const reader = resp.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop()
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue
+      let payload = line.slice(5)
+      if (payload.startsWith(' ')) payload = payload.slice(1)
+      if (!payload) continue
+      if (payload === '[DONE]') return
+      if (payload.startsWith('[ERROR]')) throw new Error(payload)
+      try { onChunk(b64ToUtf8(payload)) } catch { /* 跳过无法解码的片段 */ }
     }
   }
 }

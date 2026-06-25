@@ -1,205 +1,108 @@
 <template>
-  <el-row :gutter="16">
-    <el-col :span="16">
-      <el-card class="chat-card">
-        <template #header>
-          <div class="card-header">
-            <span>🤖 血糖管理智能体</span>
-            <el-button size="small" type="primary" :loading="loading" @click="genPlan">生成综合方案</el-button>
-          </div>
-        </template>
+  <div class="page">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">AI Agents</p>
+        <h1 class="page-title">AI 智能体中心</h1>
+        <p class="page-subtitle">一个入口集中调用各类 AI 健康能力，每个智能体单独分析并以可视化 / 结构化方式呈现。</p>
+      </div>
+    </div>
 
-        <div ref="msgBox" class="messages">
-          <el-empty v-if="!messages.length" description="向智能体提问,或点击『生成综合方案』" />
-          <div v-for="(m, i) in messages" :key="i" :class="['msg', m.role]">
-            <div class="bubble" v-if="m.role === 'user'">{{ m.content }}</div>
-            <div class="bubble assistant" v-else v-html="renderMd(m.content)"></div>
-          </div>
-        </div>
+    <div class="hub">
+      <!-- 左侧:智能体选择 -->
+      <aside class="rail">
+        <button
+          v-for="a in agents" :key="a.key" type="button"
+          class="agent-item" :class="{ active: current === a.key }"
+          @click="current = a.key"
+        >
+          <span class="agent-icon"><component :is="a.icon" /></span>
+          <span class="agent-text"><b>{{ a.name }}</b><small>{{ a.caption }}</small></span>
+        </button>
 
-        <div class="input-area">
-          <el-input
-            v-model="input"
-            type="textarea"
-            :rows="2"
-            placeholder="例如:帮我看看最近血糖,给点饮食建议"
-            @keydown.enter.exact.prevent="send"
-          />
-          <el-button type="primary" :loading="loading" @click="send">发送</el-button>
+        <div class="ctx-card">
+          <p class="ctx-title">问诊参考</p>
+          <span><b>身份</b>{{ ctx.name }} · {{ ctx.gender }}</span>
+          <span><b>健康</b>{{ ctx.body }} · {{ ctx.diabetes }}</span>
+          <span><b>设备</b>{{ ctx.device }}</span>
         </div>
-      </el-card>
-    </el-col>
+      </aside>
 
-    <el-col :span="8">
-      <el-card class="context-card">
-        <template #header>
-          <div class="card-header"><span>问诊参考资料</span></div>
-        </template>
-        <div class="context-list">
-          <span><b>身份</b>{{ contextSummary.name }} · {{ contextSummary.gender }}</span>
-          <span><b>健康</b>{{ contextSummary.body }} · {{ contextSummary.diabetes }}</span>
-          <span><b>设备</b>{{ contextSummary.device }}</span>
-        </div>
-      </el-card>
-
-      <el-card>
-        <template #header>
-          <div class="card-header"><span>📈 血糖预测</span>
-            <el-button size="small" @click="loadPredict" :loading="predLoading">刷新</el-button>
-          </div>
-        </template>
-        <div v-if="predict">
-          <p class="muted">模型:{{ predict.model }}
-            <span v-if="predict.metrics"> | MAE {{ predict.metrics.mae }} / RMSE {{ predict.metrics.rmse }}</span>
-          </p>
-          <el-table :data="predict.predictions" size="small" max-height="200">
-            <el-table-column prop="measured_at" label="时间" :formatter="(r) => r.measured_at?.slice(5,16)" />
-            <el-table-column prop="value_mmol" label="预测(mmol/L)" />
-          </el-table>
-        </div>
-        <el-empty v-else description="暂无预测" :image-size="60" />
-      </el-card>
-
-      <el-card style="margin-top: 16px">
-        <template #header>
-          <div class="card-header"><span>⚠️ 异常预警</span>
-            <el-button size="small" @click="loadAnomaly" :loading="anoLoading">刷新</el-button>
-          </div>
-        </template>
-        <div v-if="anomalies.length">
-          <el-alert
-            v-for="(a, i) in anomalies" :key="i"
-            :title="a.message"
-            :type="a.level === 'HIGH' ? 'error' : 'warning'"
-            :closable="false"
-            style="margin-bottom: 8px"
-          />
-        </div>
-        <el-empty v-else description="未发现异常" :image-size="60" />
-      </el-card>
-    </el-col>
-  </el-row>
+      <!-- 右侧:工作区 -->
+      <section class="workspace surface">
+        <component :is="activeComponent" :ctx="ctx" :key="current" />
+      </section>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, nextTick } from 'vue'
-import { marked } from 'marked'
-import { ElMessage } from 'element-plus'
-import { aiChatStream, aiPredict, aiAnomaly, getMe, getProfile, listDevices } from '../api'
+import { computed, markRaw, onMounted, ref } from 'vue'
+import { ChatDotRound, TrendCharts, Warning, Food, Document, Picture } from '@element-plus/icons-vue'
+import { getMe, getProfile, listDevices } from '../api'
+import ChatAgent from '../components/agents/ChatAgent.vue'
+import GlucoseAgent from '../components/agents/GlucoseAgent.vue'
+import RiskAgent from '../components/agents/RiskAgent.vue'
+import PlanAgent from '../components/agents/PlanAgent.vue'
+import ReportAgent from '../components/agents/ReportAgent.vue'
+import ImagingAgent from '../components/agents/ImagingAgent.vue'
 
-const messages = ref([])
-const input = ref('')
-const loading = ref(false)
-const msgBox = ref(null)
+const agents = [
+  { key: 'chat', name: '自由问答', caption: '流式对话助手', icon: markRaw(ChatDotRound), comp: markRaw(ChatAgent) },
+  { key: 'glucose', name: '血糖分析师', caption: '趋势·预测·异常', icon: markRaw(TrendCharts), comp: markRaw(GlucoseAgent) },
+  { key: 'risk', name: '风险评估师', caption: '评分与解读', icon: markRaw(Warning), comp: markRaw(RiskAgent) },
+  { key: 'plan', name: '营养与运动', caption: '饮食+七日计划', icon: markRaw(Food), comp: markRaw(PlanAgent) },
+  { key: 'report', name: '报告解读', caption: '体检报告分析', icon: markRaw(Document), comp: markRaw(ReportAgent) },
+  { key: 'imaging', name: '影像识别', caption: '肺结节检测', icon: markRaw(Picture), comp: markRaw(ImagingAgent) }
+]
 
-const predict = ref(null)
-const anomalies = ref([])
-const predLoading = ref(false)
-const anoLoading = ref(false)
+const current = ref('chat')
+const activeComponent = computed(() => agents.find(a => a.key === current.value)?.comp)
+
 const me = ref({})
 const profile = ref({})
 const devices = ref([])
-
-const contextSummary = computed(() => {
+const ctx = computed(() => {
   const gender = { 1: '男', 2: '女' }[me.value.gender] || '未设置'
   const diabetes = ['无', '1 型', '2 型', '妊娠'][profile.value.diabetesType] || '未知'
-  const activeDevice = devices.value.find(d => d.status === 'ONLINE') || devices.value[0]
+  const active = devices.value.find(d => d.status === 'ONLINE') || devices.value[0]
   return {
     name: me.value.nickname || me.value.username || '健康用户',
     gender,
     diabetes,
     body: `${profile.value.heightCm || '-'} cm / ${profile.value.weightKg || '-'} kg`,
-    device: activeDevice ? `${activeDevice.deviceName}（${activeDevice.status}，最近 ${activeDevice.lastValueMmol || '-'} mmol/L）` : '未绑定设备'
+    device: active ? `${active.deviceName}（${active.status}）` : '未绑定设备'
   }
 })
 
-const renderMd = (text) => marked.parse(text || '')
-
-async function scrollBottom() {
-  await nextTick()
-  if (msgBox.value) msgBox.value.scrollTop = msgBox.value.scrollHeight
-}
-
-async function streamTo(question) {
-  loading.value = true
-  // 通过数组下标走响应式代理修改,确保流式增量能触发渲染
-  const idx = messages.value.length
-  messages.value.push({ role: 'assistant', content: '' })
-  try {
-    await aiChatStream(question, (chunk) => {
-      messages.value[idx].content += chunk
-      scrollBottom()
-    })
-  } catch (e) {
-    messages.value[idx].content += `\n\n[出错] ${e.message}`
-    ElMessage.error('生成失败,请检查 DeepSeek API Key 配置')
-  } finally {
-    loading.value = false
-    scrollBottom()
-  }
-}
-
-async function send() {
-  const q = input.value.trim()
-  if (!q) return
-  messages.value.push({ role: 'user', content: q })
-  input.value = ''
-  await scrollBottom()
-  await streamTo(withContext(q))
-}
-
-async function genPlan() {
-  messages.value.push({ role: 'user', content: '【生成综合血糖管理方案】' })
-  await scrollBottom()
-  await streamTo(withContext('请基于我的个人身份信息、健康档案、最近记录和设备数据，生成一份今日健康指导。'))
-}
-
-function withContext(question) {
-  const c = contextSummary.value
-  return `请以 AI 医生身份回答。我的个人信息：姓名/昵称 ${c.name}，性别 ${c.gender}，糖尿病类型 ${c.diabetes}，身高体重 ${c.body}，绑定设备 ${c.device}。问题：${question}`
-}
-
-async function loadContext() {
+onMounted(async () => {
   try { me.value = await getMe() || {} } catch {}
   try { profile.value = await getProfile() || {} } catch {}
   try { devices.value = await listDevices() || [] } catch {}
-}
-
-async function loadPredict() {
-  predLoading.value = true
-  try { predict.value = await aiPredict(6) } finally { predLoading.value = false }
-}
-
-async function loadAnomaly() {
-  anoLoading.value = true
-  try {
-    const res = await aiAnomaly()
-    anomalies.value = res.anomalies || []
-  } finally { anoLoading.value = false }
-}
-
-onMounted(() => {
-  loadContext()
-  loadPredict()
-  loadAnomaly()
 })
 </script>
 
 <style scoped>
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.chat-card :deep(.el-card__body) { display: flex; flex-direction: column; }
-.messages { height: 460px; overflow-y: auto; padding: 8px; }
-.msg { margin-bottom: 14px; display: flex; }
-.msg.user { justify-content: flex-end; }
-.bubble { max-width: 80%; padding: 10px 14px; border-radius: 10px; background: #ecf5ff; white-space: pre-wrap; line-height: 1.6; }
-.bubble.assistant { background: #f4f4f5; white-space: normal; }
-.bubble.assistant :deep(h1), .bubble.assistant :deep(h2), .bubble.assistant :deep(h3) { font-size: 15px; margin: 8px 0 4px; }
-.bubble.assistant :deep(p) { margin: 6px 0; }
-.bubble.assistant :deep(ul) { padding-left: 20px; margin: 6px 0; }
-.input-area { display: flex; gap: 8px; margin-top: 12px; }
-.muted { color: #909399; font-size: 12px; }
-.context-card { margin-bottom: 16px; }
-.context-list { display:grid; gap:10px; }
-.context-list span { padding:10px 12px; background:#f7fbfa; border:1px solid var(--line); border-radius:10px; color:var(--muted); font-size:12px; line-height:1.5; }
-.context-list b { display:block; margin-bottom:3px; color:var(--ink); font-size:13px; }
+.hub { display: grid; grid-template-columns: 248px 1fr; gap: 18px; align-items: start; }
+.rail { display: grid; gap: 8px; }
+.agent-item { display: flex; align-items: center; gap: 12px; padding: 13px 14px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; cursor: pointer; transition: .18s ease; }
+.agent-item:hover { border-color: var(--mint-500); transform: translateX(2px); }
+.agent-item.active { background: var(--mint-900); border-color: var(--mint-900); }
+.agent-icon { display: grid; width: 38px; height: 38px; place-items: center; color: var(--mint-700); background: var(--mint-100); border-radius: 11px; flex: none; }
+.agent-icon svg { width: 19px; }
+.agent-item.active .agent-icon { color: var(--mint-900); background: #bfe8d9; }
+.agent-text b { display: block; font-size: 14px; color: var(--ink); }
+.agent-text small { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
+.agent-item.active .agent-text b { color: #fff; }
+.agent-item.active .agent-text small { color: #9ec4b9; }
+.ctx-card { margin-top: 8px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; display: grid; gap: 8px; }
+.ctx-title { margin: 0 0 2px; color: var(--mint-700); font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.ctx-card span { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.ctx-card b { display: block; color: var(--ink); font-size: 12px; }
+.workspace { padding: 24px; min-height: 560px; }
+@media (max-width: 900px) {
+  .hub { grid-template-columns: 1fr; }
+  .rail { grid-template-columns: repeat(2, 1fr); }
+  .ctx-card { grid-column: 1 / -1; }
+}
 </style>

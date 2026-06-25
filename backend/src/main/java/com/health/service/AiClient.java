@@ -29,6 +29,26 @@ public class AiClient {
                 .block();
     }
 
+    /** 结构化洞察:返回可渲染为卡片的 JSON。 */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> insight(Map<String, Object> body) {
+        return aiWebClient.post()
+                .uri("/api/agent/insight")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
+    }
+
+    /** 流式洞察:转发 AI 服务的 SSE 文本增量流(正文为 base64)。 */
+    public Flux<String> streamInsight(Map<String, Object> body) {
+        return aiWebClient.post()
+                .uri("/api/agent/insight/stream")
+                .bodyValue(body)
+                .retrieve()
+                .bodyToFlux(String.class);
+    }
+
     /** SSE 流式生成,返回解码后的文本增量流。 */
     public Flux<String> streamAdvice(Map<String, Object> body) {
         return aiWebClient.post()

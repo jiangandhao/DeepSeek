@@ -114,6 +114,20 @@ public class AiService {
         return advice;
     }
 
+    /** 结构化洞察:让 AI 针对某一方面返回可渲染为卡片的 JSON(不落库)。 */
+    public Map<String, Object> insight(Long userId, String aspect, String question) {
+        Map<String, Object> body = buildAdviceBody(userId, question, false);
+        body.put("aspect", aspect);
+        return aiClient.insight(body);
+    }
+
+    /** 流式洞察:逐字返回 Markdown 分析(代理 AI 服务 SSE)。 */
+    public Flux<String> streamInsight(Long userId, String aspect, String question) {
+        Map<String, Object> body = buildAdviceBody(userId, question, true);
+        body.put("aspect", aspect);
+        return aiClient.streamInsight(body);
+    }
+
     /** 流式生成(代理 AI 服务 SSE)。 */
     public Flux<String> streamAdvice(Long userId, String question) {
         Map<String, Object> body = buildAdviceBody(userId, question, true);
