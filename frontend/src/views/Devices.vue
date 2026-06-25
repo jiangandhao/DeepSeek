@@ -39,6 +39,41 @@
       </article>
     </section>
 
+    <section class="surface apple-import">
+      <div class="card-head">
+        <div><p class="eyebrow">Apple Health</p><h2 class="section-title">导入 Apple 健康数据</h2></div>
+        <span class="soft-tag"><Iphone /> 血糖 · 运动 · 饮食</span>
+      </div>
+      <p class="import-tip">
+        在 iPhone「健康」App 中点头像 →「导出所有健康数据」会得到 <b>导出.zip</b>，
+        直接上传即可（也支持解压后的 export.xml）。系统会解析其中的血糖、运动、饮食数据并写入对应记录。
+      </p>
+      <div class="import-row">
+        <span class="import-range">导入近</span>
+        <el-select v-model="importDays" style="width: 120px">
+          <el-option label="30 天" :value="30" />
+          <el-option label="90 天" :value="90" />
+          <el-option label="180 天" :value="180" />
+          <el-option label="365 天" :value="365" />
+        </el-select>
+        <el-upload
+          :auto-upload="false"
+          :show-file-list="true"
+          :limit="1"
+          accept=".zip,.xml"
+          :on-change="onAppleFile"
+          :on-exceed="onExceed"
+          ref="uploadRef"
+        >
+          <el-button><Upload /> 选择文件</el-button>
+        </el-upload>
+        <el-button type="primary" :loading="importing" :disabled="!appleFile" @click="doImport">开始导入</el-button>
+      </div>
+      <el-alert v-if="importResult" type="success" :closable="false" show-icon class="import-result">
+        导入完成：血糖 {{ importResult.glucose }} 条 · 运动 {{ importResult.exercise }} 条 · 饮食 {{ importResult.diet }} 条（共 {{ importResult.total }} 条，近 {{ importResult.days }} 天）
+      </el-alert>
+    </section>
+
     <section class="surface simulator">
       <div class="card-head">
         <div><p class="eyebrow">Telemetry payload</p><h2 class="section-title">模拟上报参数</h2></div>
@@ -65,12 +100,39 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Watch } from '@element-plus/icons-vue'
-import { bindDevice, listDevices, simulateDeviceData, unbindDevice } from '../api'
+import { Iphone, Plus, Upload, Watch } from '@element-plus/icons-vue'
+import { bindDevice, importAppleHealth, listDevices, simulateDeviceData, unbindDevice } from '../api'
 
 const devices = ref([])
 const simulatingId = ref(null)
 const payload = reactive({ valueMmol: 6.8, period: 'RANDOM', batteryLevel: 88, signalStrength: 91 })
+
+const uploadRef = ref(null)
+const appleFile = ref(null)
+const importDays = ref(90)
+const importing = ref(false)
+const importResult = ref(null)
+
+function onAppleFile(file) {
+  appleFile.value = file.raw
+  importResult.value = null
+}
+function onExceed(files) {
+  appleFile.value = files[0]
+  uploadRef.value?.clearFiles()
+  uploadRef.value?.handleStart(files[0])
+}
+async function doImport() {
+  if (!appleFile.value) return
+  importing.value = true
+  try {
+    importResult.value = await importAppleHealth(appleFile.value, importDays.value)
+    ElMessage.success('Apple 健康数据导入成功')
+    await load()
+  } finally {
+    importing.value = false
+  }
+}
 
 async function load() {
   try { devices.value = await listDevices() || [] } catch { devices.value = [] }
@@ -137,7 +199,21 @@ onMounted(load)
 .empty-card svg { margin:0 auto 12px; padding:11px; }
 .empty-card h2 { margin:0 0 6px; }
 .empty-card p { margin:0; color:var(--muted); }
+.apple-import { margin-top:18px; padding:24px; }
+.import-tip { margin:0 0 16px; color:var(--muted); font-size:13px; line-height:1.7; }
+.import-tip b { color:var(--ink); }
+.import-row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.import-range { color:var(--muted); font-size:14px; }
+.import-row :deep(.el-upload-list) { margin:0; }
+.import-result { margin-top:16px; border-radius:12px; }
 .simulator { margin-top:18px; }
+.apple-import { margin-top:18px; padding:24px; }
+.import-tip { margin:0 0 16px; color:var(--muted); font-size:13px; line-height:1.7; }
+.import-row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.import-range { color:var(--muted); font-size:14px; }
+.import-row :deep(.el-upload-list) { margin-top:6px; width:100%; }
+.import-result { margin-top:16px; }
+.soft-tag svg { width:14px; vertical-align:-2px; margin-right:2px; }
 .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
 .sim-form { display:grid; grid-template-columns:repeat(4,1fr); gap:0 16px; }
 .sim-form :deep(.el-input-number), .sim-form :deep(.el-select) { width:100%; }

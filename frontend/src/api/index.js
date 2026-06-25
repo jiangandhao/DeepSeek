@@ -52,10 +52,23 @@ export const bindDevice = (data) => request.post('/api/devices/bind', data)
 export const simulateDeviceData = (id, data) => request.post(`/api/devices/${id}/simulate`, data)
 export const unbindDevice = (id) => request.delete(`/api/devices/${id}`)
 
+// ---- Apple 健康数据导入 ----
+export const importAppleHealth = (file, days = 90) => {
+  const form = new FormData()
+  form.append('file', file)
+  form.append('days', days)
+  return request.post('/api/health/import/apple', form, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 300000 })
+}
+
 // ---- 管理员运维 ----
 export const adminOverview = () => request.get('/api/admin/overview')
-export const adminUsers = () => request.get('/api/admin/users')
+export const adminUsers = (keyword) => request.get('/api/admin/users', { params: { keyword } })
+export const adminSetUserStatus = (id, status) => request.put(`/api/admin/users/${id}/status`, { status })
+export const adminResetPassword = (id, password) => request.put(`/api/admin/users/${id}/reset-password`, { password })
+export const adminDeleteUser = (id) => request.delete(`/api/admin/users/${id}`)
 export const adminDevices = () => request.get('/api/admin/devices')
+export const adminSetDeviceStatus = (id, status) => request.put(`/api/admin/devices/${id}/status`, { status })
+export const adminDeleteDevice = (id) => request.delete(`/api/admin/devices/${id}`)
 
 // ---- 影像识别 ----
 export const detectImage = (file) => {
