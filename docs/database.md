@@ -8,6 +8,7 @@
 |---|---|---|
 | `user` | 用户与登录凭证 | `username`(唯一)、`password`(BCrypt)、`phone`(加密) |
 | `health_profile` | 健康档案(健管师/风险预警预留) | `height_cm`、`weight_kg`、`family_history`、`diabetes_type` |
+| `health_device` | 智能健康设备绑定与模拟上报 | `device_no`、`status`、`battery_level`、`last_value_mmol` |
 | `glucose_record` | 血糖记录 | `value_mmol`、`period`、`measured_at`、`idx_user_time` |
 | `diet_record` | 饮食记录 | `meal_type`、`food`、`calories`、`carbs_g`、`eaten_at` |
 | `exercise_record` | 运动记录 | `type`、`duration_min`、`intensity`、`done_at` |
@@ -25,4 +26,4 @@
 
 ## E-R 关系
 
-`user` 1—1 `health_profile`;`user` 1—N `glucose_record / diet_record / exercise_record / ai_advice / alert / chat_message`。
+`user` 1—1 `health_profile`;`user` 1—N `health_device / glucose_record / diet_record / exercise_record / ai_advice / alert / chat_message`。

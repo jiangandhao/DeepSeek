@@ -98,7 +98,24 @@
 | GET | `/api/user/me` | 当前用户信息,手机号**脱敏展示**(`phoneMasked`) |
 | PUT | `/api/user/me` | 更新账户;手机号 **AES 加密存储** `{nickname, phone, gender}` |
 
-## 10. AI 服务内部接口(后端调用,基址 `http://localhost:8000`)
+## 10. 智能设备 `/api/devices`
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `` | 当前用户已绑定设备列表 |
+| POST | `/bind` | 绑定虚拟设备 `{deviceNo, deviceName?, deviceType?}` |
+| POST | `/{id}/simulate` | 模拟设备接口上报 `{valueMmol, period?, batteryLevel?, signalStrength?, measuredAt?}`，并写入血糖记录 |
+| DELETE | `/{id}` | 解绑设备 |
+
+## 11. 管理员运维 `/api/admin`
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/overview` | 总用户、日活、设备总数、在线设备与近 7 日日活 |
+| GET | `/users` | 用户管理列表，含账号状态与设备数量 |
+| GET | `/devices` | 设备管理列表，含电量、信号与最近上报 |
+
+## 12. AI 服务内部接口(后端调用,基址 `http://localhost:8000`)
 
 | 方法 | 路径 | 说明 |
 |---|---|---|

@@ -31,6 +31,17 @@
     </el-col>
 
     <el-col :span="8">
+      <el-card class="context-card">
+        <template #header>
+          <div class="card-header"><span>问诊参考资料</span></div>
+        </template>
+        <div class="context-list">
+          <span><b>身份</b>{{ contextSummary.name }} · {{ contextSummary.gender }}</span>
+          <span><b>健康</b>{{ contextSummary.body }} · {{ contextSummary.diabetes }}</span>
+          <span><b>设备</b>{{ contextSummary.device }}</span>
+        </div>
+      </el-card>
+
       <el-card>
         <template #header>
           <div class="card-header"><span>📈 血糖预测</span>
@@ -71,10 +82,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
 import { marked } from 'marked'
 import { ElMessage } from 'element-plus'
-import { aiChatStream, aiPredict, aiAnomaly } from '../api'
+import { aiChatStream, aiPredict, aiAnomaly, getMe, getProfile, listDevices } from '../api'
 
 const messages = ref([])
 const input = ref('')
@@ -85,6 +96,22 @@ const predict = ref(null)
 const anomalies = ref([])
 const predLoading = ref(false)
 const anoLoading = ref(false)
+const me = ref({})
+const profile = ref({})
+const devices = ref([])
+
+const contextSummary = computed(() => {
+  const gender = { 1: '男', 2: '女' }[me.value.gender] || '未设置'
+  const diabetes = ['无', '1 型', '2 型', '妊娠'][profile.value.diabetesType] || '未知'
+  const activeDevice = devices.value.find(d => d.status === 'ONLINE') || devices.value[0]
+  return {
+    name: me.value.nickname || me.value.username || '健康用户',
+    gender,
+    diabetes,
+    body: `${profile.value.heightCm || '-'} cm / ${profile.value.weightKg || '-'} kg`,
+    device: activeDevice ? `${activeDevice.deviceName}（${activeDevice.status}，最近 ${activeDevice.lastValueMmol || '-'} mmol/L）` : '未绑定设备'
+  }
+})
 
 const renderMd = (text) => marked.parse(text || '')
 
@@ -118,13 +145,24 @@ async function send() {
   messages.value.push({ role: 'user', content: q })
   input.value = ''
   await scrollBottom()
-  await streamTo(q)
+  await streamTo(withContext(q))
 }
 
 async function genPlan() {
   messages.value.push({ role: 'user', content: '【生成综合血糖管理方案】' })
   await scrollBottom()
-  await streamTo('')
+  await streamTo(withContext('请基于我的个人身份信息、健康档案、最近记录和设备数据，生成一份今日健康指导。'))
+}
+
+function withContext(question) {
+  const c = contextSummary.value
+  return `请以 AI 医生身份回答。我的个人信息：姓名/昵称 ${c.name}，性别 ${c.gender}，糖尿病类型 ${c.diabetes}，身高体重 ${c.body}，绑定设备 ${c.device}。问题：${question}`
+}
+
+async function loadContext() {
+  try { me.value = await getMe() || {} } catch {}
+  try { profile.value = await getProfile() || {} } catch {}
+  try { devices.value = await listDevices() || [] } catch {}
 }
 
 async function loadPredict() {
@@ -141,6 +179,7 @@ async function loadAnomaly() {
 }
 
 onMounted(() => {
+  loadContext()
   loadPredict()
   loadAnomaly()
 })
@@ -159,4 +198,8 @@ onMounted(() => {
 .bubble.assistant :deep(ul) { padding-left: 20px; margin: 6px 0; }
 .input-area { display: flex; gap: 8px; margin-top: 12px; }
 .muted { color: #909399; font-size: 12px; }
+.context-card { margin-bottom: 16px; }
+.context-list { display:grid; gap:10px; }
+.context-list span { padding:10px 12px; background:#f7fbfa; border:1px solid var(--line); border-radius:10px; color:var(--muted); font-size:12px; line-height:1.5; }
+.context-list b { display:block; margin-bottom:3px; color:var(--ink); font-size:13px; }
 </style>

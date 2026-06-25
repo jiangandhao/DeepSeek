@@ -47,7 +47,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { House, TrendCharts, Calendar, Document, User, Lock, ArrowRight, Menu, Bell, MoreFilled, ChatDotRound, FirstAidKit } from '@element-plus/icons-vue'
+import { House, TrendCharts, Calendar, Document, User, Lock, ArrowRight, Menu, Bell, MoreFilled, ChatDotRound, FirstAidKit, Watch, Monitor } from '@element-plus/icons-vue'
 import { useAuthStore } from '../store/auth'
 
 const Pulse = FirstAidKit
@@ -55,13 +55,17 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const mobileOpen = ref(false)
-const navItems = [
+const isAdmin = computed(() => auth.username === 'admin')
+const baseNavItems = [
   { path: '/dashboard', title: '首页', caption: '健康概览', icon: House },
   { path: '/monitoring', title: '监测', caption: '趋势与预警', icon: TrendCharts },
   { path: '/plan', title: '方案', caption: '今日行动', icon: Calendar },
+  { path: '/devices', title: '设备', caption: '绑定与上报', icon: Watch },
   { path: '/exam', title: '体检', caption: '预约与报告', icon: Document },
   { path: '/profile', title: '我的', caption: '健康档案', icon: User }
 ]
+const adminNavItem = { path: '/admin', title: '运维', caption: '用户与设备', icon: Monitor }
+const navItems = computed(() => isAdmin.value ? [...baseNavItems.slice(0, 5), adminNavItem, ...baseNavItems.slice(5)] : baseNavItems)
 const displayName = computed(() => auth.nickname || auth.username || '健康用户')
 const today = new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }).format(new Date())
 function go(path) { mobileOpen.value = false; router.push(path) }

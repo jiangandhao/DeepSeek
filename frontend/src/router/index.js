@@ -13,6 +13,8 @@ const routes = [
       { path: 'plan', component: () => import('../views/Plan.vue') },
       { path: 'assistant', component: () => import('../views/Assistant.vue') },
       { path: 'health-manager', component: () => import('../views/HealthManager.vue') },
+      { path: 'devices', component: () => import('../views/Devices.vue') },
+      { path: 'admin', component: () => import('../views/AdminOps.vue') },
       { path: 'exam', component: () => import('../views/ExamBooking.vue') },
       { path: 'imaging', component: () => import('../views/Imaging.vue') },
       { path: 'account', component: () => import('../views/Account.vue') },
@@ -37,6 +39,9 @@ router.beforeEach((to) => {
     return '/login'
   }
   if (token && isPublic) {
+    return '/dashboard'
+  }
+  if (to.path === '/admin' && localStorage.getItem('username') !== 'admin') {
     return '/dashboard'
   }
   return true

@@ -23,6 +23,9 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public LoginResponse register(RegisterRequest req) {
+        if ("admin".equalsIgnoreCase(req.getUsername())) {
+            throw new BizException("管理员账号由系统初始化，请直接登录");
+        }
         Long exists = userMapper.selectCount(
                 Wrappers.<User>lambdaQuery().eq(User::getUsername, req.getUsername()));
         if (exists != null && exists > 0) {

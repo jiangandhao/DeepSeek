@@ -18,6 +18,7 @@
 
 * { box-sizing: border-box; }
 html, body, #app { min-height: 100%; margin: 0; }
+html, body, #app { width: 100%; }
 body { background: #f4f8f6; }
 button, input, textarea { font: inherit; }
 .page { max-width: 1440px; margin: 0 auto; }

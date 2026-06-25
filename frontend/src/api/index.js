@@ -46,6 +46,17 @@ export const cancelAppointment = (id) => request.delete(`/api/exam/appointments/
 export const getMe = () => request.get('/api/user/me')
 export const updateMe = (data) => request.put('/api/user/me', data)
 
+// ---- 智能设备 ----
+export const listDevices = () => request.get('/api/devices')
+export const bindDevice = (data) => request.post('/api/devices/bind', data)
+export const simulateDeviceData = (id, data) => request.post(`/api/devices/${id}/simulate`, data)
+export const unbindDevice = (id) => request.delete(`/api/devices/${id}`)
+
+// ---- 管理员运维 ----
+export const adminOverview = () => request.get('/api/admin/overview')
+export const adminUsers = () => request.get('/api/admin/users')
+export const adminDevices = () => request.get('/api/admin/devices')
+
 // ---- 影像识别 ----
 export const detectImage = (file) => {
   const form = new FormData()

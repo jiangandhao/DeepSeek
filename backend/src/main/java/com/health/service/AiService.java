@@ -37,6 +37,7 @@ public class AiService {
     private final DietService dietService;
     private final ExerciseService exerciseService;
     private final HealthProfileService healthProfileService;
+    private final DeviceService deviceService;
     private final UserMapper userMapper;
     private final AiAdviceMapper aiAdviceMapper;
     private final AlertMapper alertMapper;
@@ -93,6 +94,7 @@ public class AiService {
         body.put("glucose", glucosePoints(glucose));
         body.put("diet", diet);
         body.put("exercise", exercise);
+        body.put("devices", deviceService.list(userId));
         body.put("question", question);
         body.put("stream", stream);
         return body;
