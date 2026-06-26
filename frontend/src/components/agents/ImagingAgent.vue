@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { detectImage } from '../../api'
@@ -62,9 +62,16 @@ function onSelect(f) {
 async function run() {
   if (!file.value) { ElMessage.warning('请先选择图像'); return }
   loading.value = true
-  try { result.value = await detectImage(file.value) }
-  finally { loading.value = false }
+  try {
+    result.value = await detectImage(file.value)
+    saveInsight('imaging', result.value)
+  } finally { loading.value = false }
 }
+
+onMounted(() => {
+  const cached = loadInsight('imaging')
+  if (cached && cached.data) result.value = cached.data
+})
 </script>
 
 <style scoped>
